@@ -1,0 +1,33 @@
+# Default configuration for agents
+
+agents:
+  loan_approval:
+    version: "0.1.0"
+    llm:
+      provider: "openai"
+      model: "gpt-4"
+      temperature: 0.0
+      max_tokens: 4096
+    vector_store:
+      provider: "chroma"
+      collection_name: "loan_rules"
+      persist_directory: "./data/chroma/loan_rules"
+    max_iterations: 10
+    verbose: false
+
+# MLFlow configuration
+mlflow:
+  tracking_uri: "databricks"
+  experiment_name: "/Shared/ai-agents/loan-approval"
+
+# Observability
+observability:
+  tracing_enabled: true
+  metrics_enabled: true
+  log_level: "INFO"
+
+# Security
+security:
+  enable_pii_masking: true
+  enable_context_filtering: true
+  max_request_size_mb: 10

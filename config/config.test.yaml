@@ -1,0 +1,10 @@
+# Environment-specific configuration for test environment
+
+agents:
+  loan_approval:
+    llm:
+      model: "gpt-3.5-turbo"
+    verbose: true
+
+observability:
+  log_level: "DEBUG"

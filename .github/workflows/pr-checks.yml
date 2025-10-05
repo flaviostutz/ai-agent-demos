@@ -1,0 +1,130 @@
+name: Pull Request Checks
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+env:
+  PYTHON_VERSION: '3.11'
+
+jobs:
+  pr-validation:
+    name: Validate Pull Request
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check PR title
+        uses: amannn/action-semantic-pull-request@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+
+      - name: Install dependencies
+        run: poetry install --no-interaction
+
+      - name: Run linting
+        run: |
+          poetry run ruff check agents/ shared/ tests/
+          poetry run black --check agents/ shared/ tests/
+
+      - name: Run tests
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: poetry run pytest tests/ -v --cov=agents --cov=shared
+
+      - name: Check test coverage
+        run: |
+          poetry run pytest tests/ --cov=agents --cov=shared --cov-fail-under=80
+
+      - name: Comment PR with coverage
+        uses: py-cov-action/python-coverage-comment-action@v3
+        with:
+          GITHUB_TOKEN: ${{ github.token }}
+          MINIMUM_GREEN: 80
+          MINIMUM_ORANGE: 60
+
+  agent-performance:
+    name: Agent Performance Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+
+      - name: Install dependencies
+        run: poetry install --no-interaction
+
+      - name: Run performance tests
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          poetry run pytest tests/performance/ -v --tb=short
+
+      - name: Upload performance results
+        uses: actions/upload-artifact@v3
+        with:
+          name: performance-results
+          path: performance-*.json
+
+  changed-files:
+    name: Check Changed Files
+    runs-on: ubuntu-latest
+    outputs:
+      agents: ${{ steps.filter.outputs.agents }}
+      shared: ${{ steps.filter.outputs.shared }}
+      infrastructure: ${{ steps.filter.outputs.infrastructure }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          filters: |
+            agents:
+              - 'agents/**'
+            shared:
+              - 'shared/**'
+            infrastructure:
+              - 'infrastructure/**'
+
+  agent-specific-tests:
+    name: Test Changed Agents
+    runs-on: ubuntu-latest
+    needs: changed-files
+    if: needs.changed-files.outputs.agents == 'true'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+
+      - name: Install dependencies
+        run: poetry install --no-interaction
+
+      - name: Test affected agents
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          # Run tests for changed agents
+          poetry run pytest tests/agents/ -v

@@ -1,0 +1,16 @@
+# Environment-specific configuration for production environment
+
+agents:
+  loan_approval:
+    llm:
+      model: "gpt-4"
+      temperature: 0.0
+    verbose: false
+
+observability:
+  log_level: "INFO"
+  tracing_enabled: true
+
+security:
+  enable_pii_masking: true
+  enable_context_filtering: true
