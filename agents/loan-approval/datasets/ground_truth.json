@@ -1,0 +1,319 @@
+{
+  "dataset_version": "1.0",
+  "created_date": "2024-01-15",
+  "description": "Ground truth dataset for loan approval agent performance testing",
+  "test_cases": [
+    {
+      "request_id": "test-001",
+      "description": "Excellent credit, low DTI - Should approve",
+      "expected_decision": "approved",
+      "expected_risk_score_range": [0, 25],
+      "request": {
+        "request_id": "test-001",
+        "applicant": {
+          "first_name": "John",
+          "last_name": "Smith",
+          "date_of_birth": "1985-06-15",
+          "ssn": "123-45-6789",
+          "email": "john.smith@email.com",
+          "phone": "+15551234567",
+          "address": "123 Main St",
+          "city": "Springfield",
+          "state": "IL",
+          "zip_code": "62701"
+        },
+        "employment": {
+          "status": "employed",
+          "employer_name": "Tech Corp",
+          "job_title": "Software Engineer",
+          "years_employed": 5.0,
+          "monthly_income": 10000,
+          "additional_income": 0
+        },
+        "financial": {
+          "monthly_debt_payments": 1500,
+          "checking_balance": 15000,
+          "savings_balance": 50000,
+          "investment_balance": 100000,
+          "has_bankruptcy": false,
+          "has_foreclosure": false
+        },
+        "credit_history": {
+          "credit_score": 780,
+          "number_of_credit_cards": 3,
+          "total_credit_limit": 50000,
+          "credit_utilization": 15,
+          "number_of_late_payments_12m": 0,
+          "number_of_late_payments_24m": 0,
+          "number_of_inquiries_6m": 1,
+          "oldest_credit_line_years": 12
+        },
+        "loan_details": {
+          "amount": 300000,
+          "purpose": "home_purchase",
+          "term_months": 360,
+          "property_value": 350000,
+          "down_payment": 50000
+        }
+      }
+    },
+    {
+      "request_id": "test-002",
+      "description": "Low credit score - Should disapprove",
+      "expected_decision": "disapproved",
+      "expected_risk_score_range": null,
+      "request": {
+        "request_id": "test-002",
+        "applicant": {
+          "first_name": "Jane",
+          "last_name": "Doe",
+          "date_of_birth": "1990-03-22",
+          "ssn": "987-65-4321",
+          "email": "jane.doe@email.com",
+          "phone": "+15559876543",
+          "address": "456 Oak Ave",
+          "city": "Chicago",
+          "state": "IL",
+          "zip_code": "60601"
+        },
+        "employment": {
+          "status": "employed",
+          "employer_name": "Retail Store",
+          "job_title": "Sales Associate",
+          "years_employed": 2.0,
+          "monthly_income": 3000,
+          "additional_income": 0
+        },
+        "financial": {
+          "monthly_debt_payments": 800,
+          "checking_balance": 500,
+          "savings_balance": 1000,
+          "has_bankruptcy": false,
+          "has_foreclosure": false
+        },
+        "credit_history": {
+          "credit_score": 550,
+          "number_of_credit_cards": 5,
+          "total_credit_limit": 15000,
+          "credit_utilization": 85,
+          "number_of_late_payments_12m": 3,
+          "number_of_late_payments_24m": 6,
+          "number_of_inquiries_6m": 4,
+          "oldest_credit_line_years": 3
+        },
+        "loan_details": {
+          "amount": 25000,
+          "purpose": "auto",
+          "term_months": 60
+        }
+      }
+    },
+    {
+      "request_id": "test-003",
+      "description": "High DTI ratio - Should disapprove",
+      "expected_decision": "disapproved",
+      "expected_risk_score_range": null,
+      "request": {
+        "request_id": "test-003",
+        "applicant": {
+          "first_name": "Bob",
+          "last_name": "Johnson",
+          "date_of_birth": "1982-11-08",
+          "ssn": "555-12-3456",
+          "email": "bob.johnson@email.com",
+          "phone": "+15551112222",
+          "address": "789 Elm St",
+          "city": "Boston",
+          "state": "MA",
+          "zip_code": "02101"
+        },
+        "employment": {
+          "status": "employed",
+          "employer_name": "Financial Services",
+          "job_title": "Analyst",
+          "years_employed": 8.0,
+          "monthly_income": 6000,
+          "additional_income": 500
+        },
+        "financial": {
+          "monthly_debt_payments": 3000,
+          "checking_balance": 8000,
+          "savings_balance": 12000,
+          "has_bankruptcy": false,
+          "has_foreclosure": false
+        },
+        "credit_history": {
+          "credit_score": 700,
+          "number_of_credit_cards": 4,
+          "total_credit_limit": 40000,
+          "credit_utilization": 45,
+          "number_of_late_payments_12m": 0,
+          "number_of_late_payments_24m": 1,
+          "number_of_inquiries_6m": 2,
+          "oldest_credit_line_years": 10
+        },
+        "loan_details": {
+          "amount": 15000,
+          "purpose": "debt_consolidation",
+          "term_months": 48
+        }
+      }
+    },
+    {
+      "request_id": "test-004",
+      "description": "Short employment history - Should request additional info",
+      "expected_decision": "additional_info_needed",
+      "expected_risk_score_range": null,
+      "request": {
+        "request_id": "test-004",
+        "applicant": {
+          "first_name": "Alice",
+          "last_name": "Williams",
+          "date_of_birth": "1995-07-30",
+          "ssn": "222-33-4444",
+          "email": "alice.williams@email.com",
+          "phone": "+15553334444",
+          "address": "321 Pine Rd",
+          "city": "Seattle",
+          "state": "WA",
+          "zip_code": "98101"
+        },
+        "employment": {
+          "status": "employed",
+          "employer_name": "Startup Inc",
+          "job_title": "Marketing Manager",
+          "years_employed": 0.3,
+          "monthly_income": 7000,
+          "additional_income": 0
+        },
+        "financial": {
+          "monthly_debt_payments": 600,
+          "checking_balance": 5000,
+          "savings_balance": 10000,
+          "has_bankruptcy": false,
+          "has_foreclosure": false
+        },
+        "credit_history": {
+          "credit_score": 720,
+          "number_of_credit_cards": 2,
+          "total_credit_limit": 20000,
+          "credit_utilization": 20,
+          "number_of_late_payments_12m": 0,
+          "number_of_late_payments_24m": 0,
+          "number_of_inquiries_6m": 1,
+          "oldest_credit_line_years": 5
+        },
+        "loan_details": {
+          "amount": 200000,
+          "purpose": "home_purchase",
+          "term_months": 360,
+          "property_value": 250000,
+          "down_payment": 50000
+        }
+      }
+    },
+    {
+      "request_id": "test-005",
+      "description": "Good credit, reasonable DTI - Should approve",
+      "expected_decision": "approved",
+      "expected_risk_score_range": [25, 45],
+      "request": {
+        "request_id": "test-005",
+        "applicant": {
+          "first_name": "Michael",
+          "last_name": "Brown",
+          "date_of_birth": "1988-02-14",
+          "ssn": "777-88-9999",
+          "email": "michael.brown@email.com",
+          "phone": "+15557778888",
+          "address": "654 Maple Ave",
+          "city": "Austin",
+          "state": "TX",
+          "zip_code": "73301"
+        },
+        "employment": {
+          "status": "employed",
+          "employer_name": "Healthcare Corp",
+          "job_title": "Nurse",
+          "years_employed": 6.0,
+          "monthly_income": 5500,
+          "additional_income": 300
+        },
+        "financial": {
+          "monthly_debt_payments": 1200,
+          "checking_balance": 10000,
+          "savings_balance": 25000,
+          "has_bankruptcy": false,
+          "has_foreclosure": false
+        },
+        "credit_history": {
+          "credit_score": 710,
+          "number_of_credit_cards": 3,
+          "total_credit_limit": 30000,
+          "credit_utilization": 35,
+          "number_of_late_payments_12m": 0,
+          "number_of_late_payments_24m": 1,
+          "number_of_inquiries_6m": 1,
+          "oldest_credit_line_years": 8
+        },
+        "loan_details": {
+          "amount": 35000,
+          "purpose": "auto",
+          "term_months": 72
+        }
+      }
+    },
+    {
+      "request_id": "test-006",
+      "description": "Recent bankruptcy - Should disapprove",
+      "expected_decision": "disapproved",
+      "expected_risk_score_range": null,
+      "request": {
+        "request_id": "test-006",
+        "applicant": {
+          "first_name": "Sarah",
+          "last_name": "Davis",
+          "date_of_birth": "1980-09-25",
+          "ssn": "333-44-5555",
+          "email": "sarah.davis@email.com",
+          "phone": "+15556667777",
+          "address": "987 Cedar Ln",
+          "city": "Denver",
+          "state": "CO",
+          "zip_code": "80201"
+        },
+        "employment": {
+          "status": "employed",
+          "employer_name": "Tech Solutions",
+          "job_title": "Project Manager",
+          "years_employed": 10.0,
+          "monthly_income": 8000,
+          "additional_income": 0
+        },
+        "financial": {
+          "monthly_debt_payments": 1000,
+          "checking_balance": 8000,
+          "savings_balance": 15000,
+          "has_bankruptcy": true,
+          "bankruptcy_date": "2022-06-15",
+          "has_foreclosure": false
+        },
+        "credit_history": {
+          "credit_score": 620,
+          "number_of_credit_cards": 2,
+          "total_credit_limit": 10000,
+          "credit_utilization": 40,
+          "number_of_late_payments_12m": 0,
+          "number_of_late_payments_24m": 2,
+          "number_of_inquiries_6m": 1,
+          "oldest_credit_line_years": 4
+        },
+        "loan_details": {
+          "amount": 20000,
+          "purpose": "personal",
+          "term_months": 60
+        }
+      }
+    }
+  ]
+}
