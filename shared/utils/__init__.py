@@ -1,6 +1,6 @@
 """Shared utility functions."""
 
 from shared.utils.pdf_loader import PDFLoader
-from shared.utils.security import SecurityContext, PermissionChecker
+from shared.utils.security import PermissionChecker, SecurityContext
 
-__all__ = ["PDFLoader", "SecurityContext", "PermissionChecker"]
+__all__ = ["PDFLoader", "PermissionChecker", "SecurityContext"]

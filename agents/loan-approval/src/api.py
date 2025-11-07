@@ -1,12 +1,13 @@
 """REST API for loan approval agent."""
 
 import uvicorn
-from fastapi import FastAPI, HTTPException, status
-from fastapi.middleware.cors import CORSMiddleware
-from shared.models.loan import LoanRequest, LoanOutcome
-from shared.monitoring import get_logger, setup_logging
 from agents.loan_approval.src.agent import LoanApprovalAgent
 from agents.loan_approval.src.config import config
+from fastapi import FastAPI, HTTPException, status
+from fastapi.middleware.cors import CORSMiddleware
+
+from shared.models.loan import LoanOutcome, LoanRequest
+from shared.monitoring import get_logger, setup_logging
 
 # Setup logging
 setup_logging(level=config.log_level)
@@ -72,8 +73,7 @@ async def health() -> dict:
 
 @app.post("/api/v1/loan/evaluate", response_model=LoanOutcome)
 async def evaluate_loan(request: LoanRequest) -> LoanOutcome:
-    """
-    Evaluate a loan application.
+    """Evaluate a loan application.
 
     Args:
         request: Loan application request
@@ -83,6 +83,7 @@ async def evaluate_loan(request: LoanRequest) -> LoanOutcome:
 
     Raises:
         HTTPException: If agent is not initialized or processing fails
+
     """
     if agent is None:
         logger.error("Agent not initialized")
@@ -102,17 +103,17 @@ async def evaluate_loan(request: LoanRequest) -> LoanOutcome:
         logger.error(f"Error processing loan request {request.request_id}: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error processing loan request: {str(e)}",
+            detail=f"Error processing loan request: {e!s}",
         )
 
 
 @app.get("/api/v1/metrics")
 async def get_metrics() -> dict:
-    """
-    Get agent metrics.
+    """Get agent metrics.
 
     Returns:
         Dictionary with agent metrics
+
     """
     # In production, this would return actual metrics from MLFlow/Databricks
     return {

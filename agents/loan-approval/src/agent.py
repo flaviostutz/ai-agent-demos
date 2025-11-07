@@ -3,27 +3,27 @@
 import time
 from datetime import datetime
 from decimal import Decimal
-from typing import Optional, Dict, Any
-from langchain_openai import ChatOpenAI
-from langgraph.graph import StateGraph, END
-from shared.models.loan import (
-    LoanRequest,
-    LoanOutcome,
-    LoanDecision,
-    DecisionType,
-)
-from shared.monitoring import get_logger, MetricsTracker
-from shared.utils import PDFLoader, SecurityContext, PermissionChecker
+from typing import Any
+
 from agents.loan_approval.src.config import config
-from agents.loan_approval.src.tools import RiskCalculator, PolicyChecker
+from agents.loan_approval.src.tools import PolicyChecker, RiskCalculator
+from langchain_openai import ChatOpenAI
+from langgraph.graph import END, StateGraph
+
+from shared.models.loan import (
+    DecisionType,
+    LoanDecision,
+    LoanOutcome,
+    LoanRequest,
+)
+from shared.monitoring import MetricsTracker, get_logger
+from shared.utils import PDFLoader, PermissionChecker, SecurityContext
 
 logger = get_logger(__name__)
 
 
-class AgentState(Dict[str, Any]):
+class AgentState(dict[str, Any]):
     """State for the loan approval agent."""
-
-    pass
 
 
 class LoanApprovalAgent:
@@ -31,15 +31,15 @@ class LoanApprovalAgent:
 
     def __init__(
         self,
-        security_context: Optional[SecurityContext] = None,
-        metrics_tracker: Optional[MetricsTracker] = None,
+        security_context: SecurityContext | None = None,
+        metrics_tracker: MetricsTracker | None = None,
     ) -> None:
-        """
-        Initialize loan approval agent.
+        """Initialize loan approval agent.
 
         Args:
             security_context: Security context for permission checking
             metrics_tracker: Metrics tracker for observability
+
         """
         self.config = config
         self.security_context = security_context or PermissionChecker.create_loan_agent_context(
@@ -170,7 +170,7 @@ class LoanApprovalAgent:
         """Route workflow after eligibility check."""
         if state.get("need_additional_info"):
             return "need_info"
-        elif not state.get("eligible", False):
+        if not state.get("eligible", False):
             return "reject"
         return "continue"
 
@@ -179,9 +179,7 @@ class LoanApprovalAgent:
         logger.info("Calculating risk score")
         request: LoanRequest = state["request"]
 
-        risk_score = self.risk_calculator.calculate_risk_score(
-            request, state.get("dti_ratio", 0.0)
-        )
+        risk_score = self.risk_calculator.calculate_risk_score(request, state.get("dti_ratio", 0.0))
 
         state["risk_score"] = risk_score
         logger.info(f"Risk score calculated: {risk_score}")
@@ -239,9 +237,9 @@ class LoanApprovalAgent:
         loan_amount = float(request.loan_details.amount)
         term_months = request.loan_details.term_months
         monthly_rate = float(interest_rate) / 100 / 12
-        monthly_payment = (
-            loan_amount * monthly_rate * (1 + monthly_rate) ** term_months
-        ) / ((1 + monthly_rate) ** term_months - 1)
+        monthly_payment = (loan_amount * monthly_rate * (1 + monthly_rate) ** term_months) / (
+            (1 + monthly_rate) ** term_months - 1
+        )
 
         decision = LoanDecision(
             decision=DecisionType.APPROVED,
@@ -265,14 +263,14 @@ class LoanApprovalAgent:
         return base_rate + risk_premium
 
     def process_loan_request(self, request: LoanRequest) -> LoanOutcome:
-        """
-        Process a loan request and return decision.
+        """Process a loan request and return decision.
 
         Args:
             request: Loan application request
 
         Returns:
             Loan outcome with decision
+
         """
         start_time = time.time()
         trace_id = f"trace-{request.request_id}-{int(time.time())}"
@@ -335,7 +333,7 @@ class LoanApprovalAgent:
             # Return error decision
             error_decision = LoanDecision(
                 decision=DecisionType.ADDITIONAL_INFO_NEEDED,
-                additional_info_description=f"Unable to process request due to system error. Please try again later.",
+                additional_info_description="Unable to process request due to system error. Please try again later.",
             )
 
             return LoanOutcome(

@@ -1,27 +1,28 @@
 """Performance tests for loan approval agent against ground truth dataset."""
 
-import pytest
 import json
 import time
 from pathlib import Path
-from typing import Dict, Any, List
-from shared.models.loan import LoanRequest, DecisionType
-from shared.monitoring import MetricsTracker
+from typing import Any
 
+import pytest
+
+from shared.models.loan import DecisionType, LoanRequest
+from shared.monitoring import MetricsTracker
 
 # Mark all tests in this file as performance tests
 pytestmark = pytest.mark.performance
 
 
-def load_ground_truth_dataset() -> Dict[str, Any]:
+def load_ground_truth_dataset() -> dict[str, Any]:
     """Load the ground truth dataset."""
     dataset_path = Path(__file__).parent.parent / "datasets" / "ground_truth.json"
-    with open(dataset_path, "r") as f:
+    with open(dataset_path) as f:
         return json.load(f)
 
 
 @pytest.fixture
-def ground_truth_data() -> Dict[str, Any]:
+def ground_truth_data() -> dict[str, Any]:
     """Load ground truth dataset as fixture."""
     return load_ground_truth_dataset()
 
@@ -37,11 +38,11 @@ class TestAgentPerformance:
 
     @pytest.mark.slow
     def test_accuracy_against_ground_truth(
-        self, ground_truth_data: Dict[str, Any], metrics_tracker: MetricsTracker
+        self, ground_truth_data: dict[str, Any], metrics_tracker: MetricsTracker
     ) -> None:
         """Test agent accuracy against all ground truth test cases."""
         test_cases = ground_truth_data["test_cases"]
-        results: List[Dict[str, Any]] = []
+        results: list[dict[str, Any]] = []
 
         total_cases = len(test_cases)
         correct_decisions = 0
@@ -115,7 +116,7 @@ class TestAgentPerformance:
 
         # Print results
         print(f"\n{'=' * 80}")
-        print(f"Performance Test Results - Ground Truth Dataset")
+        print("Performance Test Results - Ground Truth Dataset")
         print(f"{'=' * 80}")
         print(f"Total test cases: {total_cases}")
         print(f"Correct decisions: {correct_decisions}")
@@ -134,10 +135,10 @@ class TestAgentPerformance:
         # Assert minimum accuracy threshold
         assert accuracy >= 80.0, f"Accuracy {accuracy:.2f}% is below 80% threshold"
 
-    def test_processing_time_performance(self, ground_truth_data: Dict[str, Any]) -> None:
+    def test_processing_time_performance(self, ground_truth_data: dict[str, Any]) -> None:
         """Test that processing time meets performance requirements."""
         test_cases = ground_truth_data["test_cases"]
-        processing_times: List[float] = []
+        processing_times: list[float] = []
 
         for test_case in test_cases:
             request_data = test_case["request"]
@@ -156,7 +157,7 @@ class TestAgentPerformance:
         max_time = max(processing_times)
         min_time = min(processing_times)
 
-        print(f"\nProcessing Time Statistics:")
+        print("\nProcessing Time Statistics:")
         print(f"  Average: {avg_time:.2f}ms")
         print(f"  Min: {min_time:.2f}ms")
         print(f"  Max: {max_time:.2f}ms")
@@ -165,7 +166,7 @@ class TestAgentPerformance:
         assert avg_time < 5000, f"Average processing time {avg_time:.2f}ms exceeds 5000ms"
         assert max_time < 10000, f"Max processing time {max_time:.2f}ms exceeds 10000ms"
 
-    def test_decision_distribution(self, ground_truth_data: Dict[str, Any]) -> None:
+    def test_decision_distribution(self, ground_truth_data: dict[str, Any]) -> None:
         """Test that decision distribution matches expectations."""
         test_cases = ground_truth_data["test_cases"]
 
@@ -180,16 +181,16 @@ class TestAgentPerformance:
             expected_distribution[expected_decision] += 1
 
         total = len(test_cases)
-        print(f"\nExpected Decision Distribution:")
+        print("\nExpected Decision Distribution:")
         for decision, count in expected_distribution.items():
             percentage = (count / total) * 100
             print(f"  {decision}: {count} ({percentage:.1f}%)")
 
         # Ensure we have test cases for all decision types
         for decision_type in DecisionType:
-            assert (
-                expected_distribution.get(decision_type.value, 0) > 0
-            ), f"No test cases for decision type: {decision_type.value}"
+            assert expected_distribution.get(decision_type.value, 0) > 0, (
+                f"No test cases for decision type: {decision_type.value}"
+            )
 
 
 @pytest.mark.slow
@@ -212,7 +213,7 @@ class TestScalability:
 class TestModelConsistency:
     """Test that agent produces consistent results."""
 
-    def test_deterministic_results(self, ground_truth_data: Dict[str, Any]) -> None:
+    def test_deterministic_results(self, ground_truth_data: dict[str, Any]) -> None:
         """Test that same input produces same output."""
         test_case = ground_truth_data["test_cases"][0]
         request_data = test_case["request"]

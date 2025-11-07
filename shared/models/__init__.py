@@ -1,23 +1,23 @@
 """Shared data models."""
 
 from shared.models.loan import (
-    LoanRequest,
-    LoanOutcome,
-    LoanDecision,
     ApplicantInfo,
+    CreditHistory,
     EmploymentInfo,
     FinancialInfo,
+    LoanDecision,
     LoanDetails,
-    CreditHistory,
+    LoanOutcome,
+    LoanRequest,
 )
 
 __all__ = [
-    "LoanRequest",
-    "LoanOutcome",
-    "LoanDecision",
     "ApplicantInfo",
+    "CreditHistory",
     "EmploymentInfo",
     "FinancialInfo",
+    "LoanDecision",
     "LoanDetails",
-    "CreditHistory",
+    "LoanOutcome",
+    "LoanRequest",
 ]

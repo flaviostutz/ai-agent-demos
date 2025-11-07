@@ -1,21 +1,22 @@
 """Unit tests for loan approval agent."""
 
-import pytest
 from datetime import date
 from decimal import Decimal
-from shared.models.loan import (
-    LoanRequest,
-    ApplicantInfo,
-    EmploymentInfo,
-    FinancialInfo,
-    CreditHistory,
-    LoanDetails,
-    EmploymentStatus,
-    LoanPurpose,
-    DecisionType,
-)
-from agents.loan_approval.src.tools import RiskCalculator
+
+import pytest
 from agents.loan_approval.src.config import AgentConfig
+from agents.loan_approval.src.tools import RiskCalculator
+
+from shared.models.loan import (
+    ApplicantInfo,
+    CreditHistory,
+    EmploymentInfo,
+    EmploymentStatus,
+    FinancialInfo,
+    LoanDetails,
+    LoanPurpose,
+    LoanRequest,
+)
 
 
 @pytest.fixture
@@ -40,32 +41,32 @@ def sample_loan_request() -> LoanRequest:
             employer_name="Tech Corp",
             job_title="Engineer",
             years_employed=Decimal("5.0"),
-            monthly_income=Decimal("8000"),
-            additional_income=Decimal("0"),
+            monthly_income=Decimal(8000),
+            additional_income=Decimal(0),
         ),
         financial=FinancialInfo(
-            monthly_debt_payments=Decimal("1500"),
-            checking_balance=Decimal("10000"),
-            savings_balance=Decimal("25000"),
+            monthly_debt_payments=Decimal(1500),
+            checking_balance=Decimal(10000),
+            savings_balance=Decimal(25000),
             has_bankruptcy=False,
             has_foreclosure=False,
         ),
         credit_history=CreditHistory(
             credit_score=720,
             number_of_credit_cards=3,
-            total_credit_limit=Decimal("40000"),
-            credit_utilization=Decimal("30"),
+            total_credit_limit=Decimal(40000),
+            credit_utilization=Decimal(30),
             number_of_late_payments_12m=0,
             number_of_late_payments_24m=0,
             number_of_inquiries_6m=1,
-            oldest_credit_line_years=Decimal("10"),
+            oldest_credit_line_years=Decimal(10),
         ),
         loan_details=LoanDetails(
-            amount=Decimal("300000"),
+            amount=Decimal(300000),
             purpose=LoanPurpose.HOME_PURCHASE,
             term_months=360,
-            property_value=Decimal("350000"),
-            down_payment=Decimal("50000"),
+            property_value=Decimal(350000),
+            down_payment=Decimal(50000),
         ),
     )
 
@@ -109,7 +110,7 @@ class TestRiskCalculator:
         # Poor credit score
         sample_loan_request.credit_history.credit_score = 580
         sample_loan_request.credit_history.number_of_late_payments_12m = 3
-        sample_loan_request.credit_history.credit_utilization = Decimal("85")
+        sample_loan_request.credit_history.credit_utilization = Decimal(85)
         dti_ratio = 0.42
 
         risk_score = risk_calculator.calculate_risk_score(sample_loan_request, dti_ratio)
@@ -157,7 +158,7 @@ class TestRiskCalculator:
         # Worst case scenario
         sample_loan_request.credit_history.credit_score = 300
         sample_loan_request.credit_history.number_of_late_payments_12m = 10
-        sample_loan_request.credit_history.credit_utilization = Decimal("100")
+        sample_loan_request.credit_history.credit_utilization = Decimal(100)
         sample_loan_request.financial.has_bankruptcy = True
         sample_loan_request.financial.bankruptcy_date = date(2023, 1, 1)
         dti_ratio = 0.50
@@ -215,9 +216,9 @@ class TestLoanRequestValidation:
                 status=EmploymentStatus.EMPLOYED,
                 employer_name="Company",
                 job_title="Job",
-                years_employed=Decimal("1"),
-                monthly_income=Decimal("-1000"),  # Negative
-                additional_income=Decimal("0"),
+                years_employed=Decimal(1),
+                monthly_income=Decimal(-1000),  # Negative
+                additional_income=Decimal(0),
             )
 
     def test_credit_score_bounds(self) -> None:

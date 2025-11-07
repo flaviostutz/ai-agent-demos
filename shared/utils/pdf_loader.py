@@ -1,8 +1,9 @@
 """PDF document loader for policy documents."""
 
 from pathlib import Path
-from typing import List
+
 import PyPDF2
+
 from shared.monitoring.logger import get_logger
 
 logger = get_logger(__name__)
@@ -13,8 +14,7 @@ class PDFLoader:
 
     @staticmethod
     def load_pdf(file_path: str) -> str:
-        """
-        Load text content from a PDF file.
+        """Load text content from a PDF file.
 
         Args:
             file_path: Path to the PDF file
@@ -25,6 +25,7 @@ class PDFLoader:
         Raises:
             FileNotFoundError: If file doesn't exist
             ValueError: If file is not a valid PDF
+
         """
         path = Path(file_path)
         if not path.exists():
@@ -55,15 +56,15 @@ class PDFLoader:
             raise
 
     @staticmethod
-    def load_multiple_pdfs(file_paths: List[str]) -> str:
-        """
-        Load text content from multiple PDF files.
+    def load_multiple_pdfs(file_paths: list[str]) -> str:
+        """Load text content from multiple PDF files.
 
         Args:
             file_paths: List of paths to PDF files
 
         Returns:
             Combined text content from all PDFs
+
         """
         all_content = []
         for file_path in file_paths:
@@ -77,8 +78,7 @@ class PDFLoader:
 
     @staticmethod
     def load_directory(directory_path: str, pattern: str = "*.pdf") -> str:
-        """
-        Load all PDF files from a directory.
+        """Load all PDF files from a directory.
 
         Args:
             directory_path: Path to directory containing PDFs
@@ -86,6 +86,7 @@ class PDFLoader:
 
         Returns:
             Combined text content from all matching PDFs
+
         """
         dir_path = Path(directory_path)
         if not dir_path.exists():

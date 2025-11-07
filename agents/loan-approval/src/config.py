@@ -1,6 +1,5 @@
 """Configuration management for loan approval agent."""
 
-from typing import Optional
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -26,15 +25,15 @@ class AgentConfig(BaseSettings):
     openai_max_tokens: int = 2000
 
     # MLFlow settings
-    mlflow_tracking_uri: Optional[str] = None
+    mlflow_tracking_uri: str | None = None
     mlflow_experiment_name: str = "loan-approval-agent"
 
     # Databricks settings
-    databricks_host: Optional[str] = None
-    databricks_token: Optional[str] = None
+    databricks_host: str | None = None
+    databricks_token: str | None = None
 
     # Monitoring
-    teams_webhook_url: Optional[str] = None
+    teams_webhook_url: str | None = None
     enable_tracing: bool = True
     enable_metrics: bool = True
     log_level: str = "INFO"

@@ -1,4 +1,4 @@
-.PHONY: help setup install clean lint test build deploy undeploy test-integration performance-test format type-check
+.PHONY: help setup install clean lint lint-fix test build deploy undeploy test-integration performance-test format type-check
 
 # Default target
 .DEFAULT_GOAL := help
@@ -68,18 +68,26 @@ clean: ## Clean build artifacts and cache files
 	rm -rf build/ dist/ 2>/dev/null || true
 	@echo "$(GREEN)Cleanup complete!$(NC)"
 
-format: ## Format code with black
+format: ## Format code with ruff
 	@echo "$(BLUE)Formatting code...$(NC)"
-	uv run black agents/ shared/
+	uv run ruff format agents/ shared/
 	@echo "$(GREEN)Code formatted!$(NC)"
 
-lint: ## Run linters (ruff, black check)
+lint: ## Run linters (ruff check and format check)
 	@echo "$(BLUE)Running linters...$(NC)"
-	@echo "$(YELLOW)Running ruff...$(NC)"
+	@echo "$(YELLOW)Running ruff check...$(NC)"
 	uv run ruff check agents/ shared/
-	@echo "$(YELLOW)Running black check...$(NC)"
-	uv run black --check agents/ shared/
+	@echo "$(YELLOW)Running ruff format check...$(NC)"
+	uv run ruff format --check agents/ shared/
 	@echo "$(GREEN)Linting complete!$(NC)"
+
+lint-fix: ## Auto-fix linting issues (ruff check and format)
+	@echo "$(BLUE)Auto-fixing linting issues...$(NC)"
+	@echo "$(YELLOW)Running ruff --fix...$(NC)"
+	uv run ruff check --fix agents/ shared/
+	@echo "$(YELLOW)Running ruff format...$(NC)"
+	uv run ruff format agents/ shared/
+	@echo "$(GREEN)Linting fixes applied!$(NC)"
 
 type-check: ## Run mypy type checking
 	@echo "$(BLUE)Running type checks...$(NC)"

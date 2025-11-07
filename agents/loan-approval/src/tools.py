@@ -1,12 +1,13 @@
 """Tools and utilities for loan approval agent."""
 
 from datetime import date, datetime
-from typing import Dict, Any
-from decimal import Decimal
+from typing import Any
+
+from agents.loan_approval.src.config import AgentConfig
 from langchain_openai import ChatOpenAI
+
 from shared.models.loan import LoanRequest
 from shared.monitoring import get_logger
-from agents.loan_approval.src.config import AgentConfig
 
 logger = get_logger(__name__)
 
@@ -15,17 +16,16 @@ class RiskCalculator:
     """Calculate risk scores for loan applications."""
 
     def __init__(self, config: AgentConfig) -> None:
-        """
-        Initialize risk calculator.
+        """Initialize risk calculator.
 
         Args:
             config: Agent configuration
+
         """
         self.config = config
 
     def calculate_risk_score(self, request: LoanRequest, dti_ratio: float) -> int:
-        """
-        Calculate comprehensive risk score (0-100, where 100 is highest risk).
+        """Calculate comprehensive risk score (0-100, where 100 is highest risk).
 
         Args:
             request: Loan application request
@@ -33,6 +33,7 @@ class RiskCalculator:
 
         Returns:
             Risk score from 0 to 100
+
         """
         risk_score = 0.0
 
@@ -117,9 +118,7 @@ class RiskCalculator:
 
         # Loan to value ratio for home loans (0-10 points)
         if request.loan_details.property_value:
-            ltv = float(request.loan_details.amount) / float(
-                request.loan_details.property_value
-            )
+            ltv = float(request.loan_details.amount) / float(request.loan_details.property_value)
             if ltv > 0.95:
                 risk_score += 10
             elif ltv > 0.90:
@@ -146,19 +145,18 @@ class PolicyChecker:
     """Check loan applications against policy documents."""
 
     def __init__(self, llm: ChatOpenAI, policy_content: str) -> None:
-        """
-        Initialize policy checker.
+        """Initialize policy checker.
 
         Args:
             llm: Language model for policy analysis
             policy_content: Loaded policy document content
+
         """
         self.llm = llm
         self.policy_content = policy_content
 
-    def check_compliance(self, request: LoanRequest, risk_score: int) -> Dict[str, Any]:
-        """
-        Check loan request compliance with policies.
+    def check_compliance(self, request: LoanRequest, risk_score: int) -> dict[str, Any]:
+        """Check loan request compliance with policies.
 
         Args:
             request: Loan application request
@@ -166,6 +164,7 @@ class PolicyChecker:
 
         Returns:
             Dictionary with compliance result
+
         """
         logger.info("Checking policy compliance with LLM")
 
@@ -211,20 +210,19 @@ Be strict in your evaluation and ensure all policy requirements are met.
                     "compliant": True,
                     "notes": "Application complies with all policies",
                 }
-            else:
-                # Extract reason from response
-                reason = "Policy compliance check failed"
-                if "reason" in result_text.lower():
-                    # Simple extraction - in production use JSON parsing
-                    parts = result_text.split('"reason"')
-                    if len(parts) > 1:
-                        reason_part = parts[1].split('"')[1] if '"' in parts[1] else reason
+            # Extract reason from response
+            reason = "Policy compliance check failed"
+            if "reason" in result_text.lower():
+                # Simple extraction - in production use JSON parsing
+                parts = result_text.split('"reason"')
+                if len(parts) > 1:
+                    reason_part = parts[1].split('"')[1] if '"' in parts[1] else reason
 
-                return {
-                    "compliant": False,
-                    "reason": reason,
-                    "notes": result_text[:200],
-                }
+            return {
+                "compliant": False,
+                "reason": reason,
+                "notes": result_text[:200],
+            }
 
         except Exception as e:
             logger.error(f"Error in policy compliance check: {e}")

@@ -1,7 +1,7 @@
 """MS Teams notifications for alerts and monitoring."""
 
-from typing import Optional
 import pymsteams
+
 from shared.monitoring.logger import get_logger
 
 logger = get_logger(__name__)
@@ -11,11 +11,11 @@ class TeamsNotifier:
     """Send notifications to MS Teams channel."""
 
     def __init__(self, webhook_url: str) -> None:
-        """
-        Initialize Teams notifier.
+        """Initialize Teams notifier.
 
         Args:
             webhook_url: MS Teams webhook URL
+
         """
         self.webhook_url = webhook_url
 
@@ -24,10 +24,9 @@ class TeamsNotifier:
         title: str,
         text: str,
         color: str = "0078D4",
-        facts: Optional[dict] = None,
+        facts: dict | None = None,
     ) -> bool:
-        """
-        Send a message to Teams channel.
+        """Send a message to Teams channel.
 
         Args:
             title: Message title
@@ -37,6 +36,7 @@ class TeamsNotifier:
 
         Returns:
             True if successful, False otherwise
+
         """
         try:
             message = pymsteams.connectorcard(self.webhook_url)
@@ -57,9 +57,8 @@ class TeamsNotifier:
             logger.error(f"Failed to send Teams notification: {e}")
             return False
 
-    def send_success(self, title: str, details: Optional[dict] = None) -> bool:
-        """
-        Send a success notification.
+    def send_success(self, title: str, details: dict | None = None) -> bool:
+        """Send a success notification.
 
         Args:
             title: Success message title
@@ -67,6 +66,7 @@ class TeamsNotifier:
 
         Returns:
             True if successful, False otherwise
+
         """
         return self.send_message(
             title=f"✅ {title}",
@@ -75,9 +75,8 @@ class TeamsNotifier:
             facts=details,
         )
 
-    def send_warning(self, title: str, message: str, details: Optional[dict] = None) -> bool:
-        """
-        Send a warning notification.
+    def send_warning(self, title: str, message: str, details: dict | None = None) -> bool:
+        """Send a warning notification.
 
         Args:
             title: Warning message title
@@ -86,6 +85,7 @@ class TeamsNotifier:
 
         Returns:
             True if successful, False otherwise
+
         """
         return self.send_message(
             title=f"⚠️ {title}",
@@ -94,9 +94,8 @@ class TeamsNotifier:
             facts=details,
         )
 
-    def send_error(self, title: str, error: str, details: Optional[dict] = None) -> bool:
-        """
-        Send an error notification.
+    def send_error(self, title: str, error: str, details: dict | None = None) -> bool:
+        """Send an error notification.
 
         Args:
             title: Error message title
@@ -105,6 +104,7 @@ class TeamsNotifier:
 
         Returns:
             True if successful, False otherwise
+
         """
         return self.send_message(
             title=f"❌ {title}",
@@ -118,10 +118,9 @@ class TeamsNotifier:
         environment: str,
         version: str,
         status: str,
-        details: Optional[dict] = None,
+        details: dict | None = None,
     ) -> bool:
-        """
-        Send a deployment notification.
+        """Send a deployment notification.
 
         Args:
             environment: Deployment environment (test, acceptance, production)
@@ -131,6 +130,7 @@ class TeamsNotifier:
 
         Returns:
             True if successful, False otherwise
+
         """
         color_map = {
             "success": "28A745",
@@ -155,10 +155,9 @@ class TeamsNotifier:
         metric_name: str,
         current_value: float,
         threshold: float,
-        details: Optional[dict] = None,
+        details: dict | None = None,
     ) -> bool:
-        """
-        Send a performance alert.
+        """Send a performance alert.
 
         Args:
             agent_name: Name of the agent
@@ -169,6 +168,7 @@ class TeamsNotifier:
 
         Returns:
             True if successful, False otherwise
+
         """
         facts_dict = {
             "Agent": agent_name,

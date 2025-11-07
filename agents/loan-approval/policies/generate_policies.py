@@ -1,11 +1,12 @@
 """Script to generate sample loan policy PDF documents."""
 
-from reportlab.lib.pagesizes import letter
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.units import inch
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, PageBreak
-from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY
 import os
+
+from reportlab.lib.enums import TA_CENTER
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+from reportlab.lib.units import inch
+from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer
 
 # Get the directory of this script
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -20,22 +21,22 @@ def create_loan_policy_v1():
 
     # Title
     title_style = ParagraphStyle(
-        'CustomTitle',
-        parent=styles['Heading1'],
+        "CustomTitle",
+        parent=styles["Heading1"],
         fontSize=24,
-        textColor='darkblue',
+        textColor="darkblue",
         spaceAfter=30,
-        alignment=TA_CENTER
+        alignment=TA_CENTER,
     )
     story.append(Paragraph("Internal Loan Approval Policy", title_style))
     story.append(Spacer(1, 0.3 * inch))
-    story.append(Paragraph("Version 1.0 - Effective Date: January 2024", styles['Normal']))
+    story.append(Paragraph("Version 1.0 - Effective Date: January 2024", styles["Normal"]))
     story.append(Spacer(1, 0.5 * inch))
 
     # Section 1
-    story.append(Paragraph("1. Credit Score Requirements", styles['Heading2']))
+    story.append(Paragraph("1. Credit Score Requirements", styles["Heading2"]))
     story.append(Spacer(1, 0.2 * inch))
-    
+
     content = """
     All loan applicants must meet minimum credit score requirements based on loan type:
     
@@ -47,13 +48,13 @@ def create_loan_policy_v1():
     Applicants with credit scores below these thresholds require executive approval and must provide
     additional documentation including proof of income stability and collateral where applicable.
     """
-    story.append(Paragraph(content, styles['BodyText']))
+    story.append(Paragraph(content, styles["BodyText"]))
     story.append(Spacer(1, 0.3 * inch))
 
     # Section 2
-    story.append(Paragraph("2. Debt-to-Income Ratio Standards", styles['Heading2']))
+    story.append(Paragraph("2. Debt-to-Income Ratio Standards", styles["Heading2"]))
     story.append(Spacer(1, 0.2 * inch))
-    
+
     content = """
     The maximum allowable debt-to-income (DTI) ratio is 43% for all loan types. This includes:
     
@@ -66,13 +67,13 @@ def create_loan_policy_v1():
     • Larger down payment (minimum 20% for home loans)
     • Co-borrower with qualifying income
     """
-    story.append(Paragraph(content, styles['BodyText']))
+    story.append(Paragraph(content, styles["BodyText"]))
     story.append(Spacer(1, 0.3 * inch))
 
     # Section 3
-    story.append(Paragraph("3. Employment and Income Verification", styles['Heading2']))
+    story.append(Paragraph("3. Employment and Income Verification", styles["Heading2"]))
     story.append(Spacer(1, 0.2 * inch))
-    
+
     content = """
     All applicants must demonstrate stable income through:
     
@@ -86,13 +87,13 @@ def create_loan_policy_v1():
     Income must be verifiable and sufficient to support the proposed loan payment while maintaining
     the maximum DTI ratio of 43%.
     """
-    story.append(Paragraph(content, styles['BodyText']))
+    story.append(Paragraph(content, styles["BodyText"]))
     story.append(Spacer(1, 0.3 * inch))
 
     # Section 4
-    story.append(Paragraph("4. Adverse Credit Events", styles['Heading2']))
+    story.append(Paragraph("4. Adverse Credit Events", styles["Heading2"]))
     story.append(Spacer(1, 0.2 * inch))
-    
+
     content = """
     The following waiting periods apply after adverse credit events:
     
@@ -105,13 +106,13 @@ def create_loan_policy_v1():
     Exceptions may be granted for documented extenuating circumstances (medical emergency, job loss
     due to economic conditions) with executive approval.
     """
-    story.append(Paragraph(content, styles['BodyText']))
+    story.append(Paragraph(content, styles["BodyText"]))
     story.append(Spacer(1, 0.3 * inch))
 
     # Section 5
-    story.append(Paragraph("5. Loan-to-Value Ratios", styles['Heading2']))
+    story.append(Paragraph("5. Loan-to-Value Ratios", styles["Heading2"]))
     story.append(Spacer(1, 0.2 * inch))
-    
+
     content = """
     Maximum loan-to-value (LTV) ratios by loan type:
     
@@ -126,13 +127,13 @@ def create_loan_policy_v1():
     • Lower DTI ratio (under 35%)
     • Significant liquid reserves (6+ months of payments)
     """
-    story.append(Paragraph(content, styles['BodyText']))
+    story.append(Paragraph(content, styles["BodyText"]))
     story.append(Spacer(1, 0.3 * inch))
 
     # Section 6
-    story.append(Paragraph("6. Reserve Requirements", styles['Heading2']))
+    story.append(Paragraph("6. Reserve Requirements", styles["Heading2"]))
     story.append(Spacer(1, 0.2 * inch))
-    
+
     content = """
     Minimum reserve requirements after closing:
     
@@ -144,13 +145,13 @@ def create_loan_policy_v1():
     Reserves must be in liquid, readily accessible accounts (checking, savings, money market).
     Retirement accounts may be considered at 60% of value.
     """
-    story.append(Paragraph(content, styles['BodyText']))
+    story.append(Paragraph(content, styles["BodyText"]))
     story.append(Spacer(1, 0.3 * inch))
 
     # Section 7
-    story.append(Paragraph("7. Risk-Based Pricing", styles['Heading2']))
+    story.append(Paragraph("7. Risk-Based Pricing", styles["Heading2"]))
     story.append(Spacer(1, 0.2 * inch))
-    
+
     content = """
     Interest rates are determined by risk assessment:
     
@@ -164,7 +165,7 @@ def create_loan_policy_v1():
     • +0.25% for cash-out refinance
     • -0.25% for automatic payment enrollment
     """
-    story.append(Paragraph(content, styles['BodyText']))
+    story.append(Paragraph(content, styles["BodyText"]))
 
     doc.build(story)
     print(f"Generated: {pdf_path}")
@@ -179,34 +180,34 @@ def create_best_practices():
 
     # Title
     title_style = ParagraphStyle(
-        'CustomTitle',
-        parent=styles['Heading1'],
+        "CustomTitle",
+        parent=styles["Heading1"],
         fontSize=24,
-        textColor='darkgreen',
+        textColor="darkgreen",
         spaceAfter=30,
-        alignment=TA_CENTER
+        alignment=TA_CENTER,
     )
     story.append(Paragraph("Loan Underwriting Best Practices", title_style))
     story.append(Spacer(1, 0.3 * inch))
-    story.append(Paragraph("Industry Standards and Guidelines - 2024", styles['Normal']))
+    story.append(Paragraph("Industry Standards and Guidelines - 2024", styles["Normal"]))
     story.append(Spacer(1, 0.5 * inch))
 
     # Introduction
-    story.append(Paragraph("Introduction", styles['Heading2']))
+    story.append(Paragraph("Introduction", styles["Heading2"]))
     story.append(Spacer(1, 0.2 * inch))
-    
+
     content = """
     This document outlines industry best practices for loan underwriting, based on guidelines from
     federal agencies, industry associations, and market standards. These practices should be followed
     to ensure prudent lending decisions while maintaining compliance with regulatory requirements.
     """
-    story.append(Paragraph(content, styles['BodyText']))
+    story.append(Paragraph(content, styles["BodyText"]))
     story.append(Spacer(1, 0.3 * inch))
 
     # Section 1
-    story.append(Paragraph("1. Ability to Repay", styles['Heading2']))
+    story.append(Paragraph("1. Ability to Repay", styles["Heading2"]))
     story.append(Spacer(1, 0.2 * inch))
-    
+
     content = """
     The fundamental principle of responsible lending is ensuring the borrower's ability to repay:
     
@@ -221,13 +222,13 @@ def create_best_practices():
     • Back-end DTI (total debt ratio): Maximum 36-43%
     • Residual income: Minimum varies by family size and location
     """
-    story.append(Paragraph(content, styles['BodyText']))
+    story.append(Paragraph(content, styles["BodyText"]))
     story.append(Spacer(1, 0.3 * inch))
 
     # Section 2
-    story.append(Paragraph("2. Credit History Evaluation", styles['Heading2']))
+    story.append(Paragraph("2. Credit History Evaluation", styles["Heading2"]))
     story.append(Spacer(1, 0.2 * inch))
-    
+
     content = """
     Comprehensive credit review beyond the credit score:
     
@@ -245,13 +246,13 @@ def create_best_practices():
     • Collections or charge-offs
     • Inconsistent payment patterns
     """
-    story.append(Paragraph(content, styles['BodyText']))
+    story.append(Paragraph(content, styles["BodyText"]))
     story.append(Spacer(1, 0.3 * inch))
 
     # Section 3
-    story.append(Paragraph("3. Property Valuation Standards", styles['Heading2']))
+    story.append(Paragraph("3. Property Valuation Standards", styles["Heading2"]))
     story.append(Spacer(1, 0.2 * inch))
-    
+
     content = """
     For secured loans, proper collateral valuation is essential:
     
@@ -267,13 +268,13 @@ def create_best_practices():
     • Consider property type and marketability
     • Factor in necessary repairs or defects
     """
-    story.append(Paragraph(content, styles['BodyText']))
+    story.append(Paragraph(content, styles["BodyText"]))
     story.append(Spacer(1, 0.3 * inch))
 
     # Section 4
-    story.append(Paragraph("4. Risk Mitigation Strategies", styles['Heading2']))
+    story.append(Paragraph("4. Risk Mitigation Strategies", styles["Heading2"]))
     story.append(Spacer(1, 0.2 * inch))
-    
+
     content = """
     Implement appropriate risk mitigation measures:
     
@@ -290,13 +291,13 @@ def create_best_practices():
     • Stable long-term employment
     • Significant equity in other properties
     """
-    story.append(Paragraph(content, styles['BodyText']))
+    story.append(Paragraph(content, styles["BodyText"]))
     story.append(Spacer(1, 0.3 * inch))
 
     # Section 5
-    story.append(Paragraph("5. Documentation Requirements", styles['Heading2']))
+    story.append(Paragraph("5. Documentation Requirements", styles["Heading2"]))
     story.append(Spacer(1, 0.2 * inch))
-    
+
     content = """
     Maintain complete documentation for each loan:
     
@@ -314,13 +315,13 @@ def create_best_practices():
     • From reliable third-party sources
     • Verified for accuracy and authenticity
     """
-    story.append(Paragraph(content, styles['BodyText']))
+    story.append(Paragraph(content, styles["BodyText"]))
     story.append(Spacer(1, 0.3 * inch))
 
     # Section 6
-    story.append(Paragraph("6. Fair Lending Compliance", styles['Heading2']))
+    story.append(Paragraph("6. Fair Lending Compliance", styles["Heading2"]))
     story.append(Spacer(1, 0.2 * inch))
-    
+
     content = """
     Ensure compliance with fair lending regulations:
     
@@ -338,7 +339,7 @@ def create_best_practices():
     • Disability
     • Age (for certain loan types)
     """
-    story.append(Paragraph(content, styles['BodyText']))
+    story.append(Paragraph(content, styles["BodyText"]))
 
     doc.build(story)
     print(f"Generated: {pdf_path}")
