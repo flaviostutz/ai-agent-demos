@@ -180,3 +180,10 @@ exclude_lines = [
     "if TYPE_CHECKING:",
     "@abstractmethod",
 ]
+
+# Hatch build configuration: explicitly declare packages since project name
+# `ai-agents-monorepo` (normalized to `ai_agents_monorepo`) does not correspond
+# to an existing top-level package directory. Without this section hatchling
+# cannot infer which Python packages to include and editable install fails.
+[tool.hatch.build.targets.wheel]
+packages = ["agents", "shared"]
