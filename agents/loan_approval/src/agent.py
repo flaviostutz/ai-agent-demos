@@ -3,10 +3,15 @@
 import time
 from datetime import datetime, timezone
 from decimal import Decimal
-from typing import Any
+from typing import Any, TypedDict
 
 from langchain_openai import ChatOpenAI
 from langgraph.graph import END, StateGraph
+
+try:
+    from langchain_core.pydantic_v1 import SecretStr
+except ImportError:
+    from pydantic.v1 import SecretStr
 
 from agents.loan_approval.src.config import config
 from agents.loan_approval.src.tools import PolicyChecker, RiskCalculator
@@ -22,8 +27,21 @@ from shared.utils import PDFLoader, PermissionChecker, SecurityContext
 logger = get_logger(__name__)
 
 
-# Type alias for agent state
-AgentState = dict[str, Any]
+class AgentState(TypedDict, total=False):
+    """Type definition for agent state."""
+
+    request: LoanRequest
+    validation_passed: bool
+    validation_errors: list[str]
+    eligible: bool
+    rejection_reason: str
+    need_additional_info: bool
+    additional_info_description: str
+    dti_ratio: float
+    risk_score: int
+    policy_compliant: bool
+    policy_notes: str
+    decision: LoanDecision
 
 
 class LoanApprovalAgent:
@@ -54,8 +72,7 @@ class LoanApprovalAgent:
         self.llm = ChatOpenAI(
             model=config.openai_model,
             temperature=config.openai_temperature,
-            max_tokens=config.openai_max_tokens,
-            api_key=config.openai_api_key,
+            api_key=SecretStr(config.openai_api_key) if config.openai_api_key else None,
         )
 
         # Load policy documents
@@ -81,7 +98,7 @@ class LoanApprovalAgent:
             logger.exception("Failed to load policy documents")
             return ""
 
-    def _build_workflow(self) -> StateGraph:
+    def _build_workflow(self) -> Any:
         """Build the LangGraph workflow for loan approval."""
         workflow = StateGraph(AgentState)
 
@@ -210,7 +227,12 @@ class LoanApprovalAgent:
         if state.get("rejection_reason"):
             decision = LoanDecision(
                 decision=DecisionType.DISAPPROVED,
+                risk_score=None,
                 disapproval_reason=state["rejection_reason"],
+                recommended_amount=None,
+                recommended_term_months=None,
+                interest_rate=None,
+                monthly_payment=None,
             )
             state["decision"] = decision
             return state
@@ -220,6 +242,11 @@ class LoanApprovalAgent:
             decision = LoanDecision(
                 decision=DecisionType.ADDITIONAL_INFO_NEEDED,
                 additional_info_description=state["additional_info_description"],
+                risk_score=None,
+                recommended_amount=None,
+                recommended_term_months=None,
+                interest_rate=None,
+                monthly_payment=None,
             )
             state["decision"] = decision
             return state
@@ -334,6 +361,11 @@ class LoanApprovalAgent:
                 additional_info_description=(
                     "Unable to process request due to system error. Please try again later."
                 ),
+                risk_score=None,
+                recommended_amount=None,
+                recommended_term_months=None,
+                interest_rate=None,
+                monthly_payment=None,
             )
 
             return LoanOutcome(

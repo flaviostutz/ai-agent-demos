@@ -3,11 +3,11 @@
 import logging
 from pathlib import Path
 
-from reportlab.lib.enums import TA_CENTER  # type: ignore[import-untyped]
-from reportlab.lib.pagesizes import letter  # type: ignore[import-untyped]
-from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet  # type: ignore[import-untyped]
-from reportlab.lib.units import inch  # type: ignore[import-untyped]
-from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer  # type: ignore[import-untyped]
+from reportlab.lib.enums import TA_CENTER
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+from reportlab.lib.units import inch
+from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer
 
 # Get the directory of this script
 SCRIPT_DIR = Path(__file__).parent
