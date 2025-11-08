@@ -1,4 +1,4 @@
-.PHONY: help install clean lint test test-integration performance-test run-local build deploy undeploy
+.PHONY: help install clean lint lint-fix test test-integration test-performance run-local build deploy undeploy all validate-dataset
 
 # Colors for output
 BLUE := \033[0;34m
@@ -30,43 +30,50 @@ clean: ## Clean build artifacts
 	rm -rf .coverage htmlcov/ 2>/dev/null || true
 	@echo "$(GREEN)Cleanup complete!$(NC)"
 
-lint: ## Run linters
+lint: ## Run linters (ruff check, format check, and type check)
 	@echo "$(BLUE)Running linters...$(NC)"
-	@echo "$(YELLOW)Running ruff...$(NC)"
-	cd ../.. && ruff check agents/loan-approval/
-	@echo "$(YELLOW)Running black check...$(NC)"
-	cd ../.. && black --check agents/loan-approval/
+	@echo "$(YELLOW)Running ruff check...$(NC)"
+	cd ../.. && uv run ruff check agents/loan_approval/
+	@echo "$(YELLOW)Running ruff format check...$(NC)"
+	cd ../.. && uv run ruff format --check agents/loan_approval/
+	@echo "$(YELLOW)Running type checks...$(NC)"
+	cd ../.. && uv run mypy agents/loan_approval/src/
 	@echo "$(GREEN)Linting complete!$(NC)"
 
-format: ## Format code
-	@echo "$(BLUE)Formatting code...$(NC)"
-	cd ../.. && black agents/loan-approval/
-	@echo "$(GREEN)Code formatted!$(NC)"
+lint-fix: ## Auto-fix linting issues (ruff check and format)
+	@echo "$(BLUE)Auto-fixing linting issues...$(NC)"
+	@echo "$(YELLOW)Running ruff --fix...$(NC)"
+	cd ../.. && uv run ruff check --fix agents/loan_approval/
+	@echo "$(YELLOW)Running ruff format...$(NC)"
+	cd ../.. && uv run ruff format agents/loan_approval/
+	@echo "$(GREEN)Linting fixes applied!$(NC)"
 
-type-check: ## Run type checking
-	@echo "$(BLUE)Running type checks...$(NC)"
-	cd ../.. && mypy agents/loan-approval/src/
-	@echo "$(GREEN)Type checking complete!$(NC)"
-
-test: ## Run unit tests
+test: ## Run all unit tests
 	@echo "$(BLUE)Running unit tests...$(NC)"
-	cd ../.. && pytest agents/loan-approval/tests/ -v -m "not integration and not performance"
+	cd ../.. && uv run pytest agents/loan_approval/tests/ -v -m "not integration and not performance"
 	@echo "$(GREEN)Tests complete!$(NC)"
 
 test-integration: ## Run integration tests
 	@echo "$(BLUE)Running integration tests...$(NC)"
-	cd ../.. && pytest agents/loan-approval/tests/ -v -m integration
+	cd ../.. && uv run pytest agents/loan_approval/tests/ -v -m integration
 	@echo "$(GREEN)Integration tests complete!$(NC)"
 
-performance-test: ## Run performance tests
+test-performance: ## Run performance tests
 	@echo "$(BLUE)Running performance tests...$(NC)"
-	cd ../.. && pytest agents/loan-approval/tests/test_performance.py -v -m performance
+	cd ../.. && uv run pytest agents/loan_approval/tests/test_performance.py -v -m performance
 	@echo "$(GREEN)Performance tests complete!$(NC)"
 
 run-local: ## Run agent locally
 	@echo "$(BLUE)Starting agent locally...$(NC)"
 	@echo "$(YELLOW)Make sure to set environment variables in .env file$(NC)"
-	cd src && $(PYTHON) api.py
+	@if [ ! -f ../../.env ]; then \
+		echo "$(RED)Error: .env file not found in project root$(NC)"; \
+		echo "$(YELLOW)Run 'make run' from the project root instead$(NC)"; \
+		exit 1; \
+	fi
+	@echo "$(GREEN)API will be available at: http://localhost:8000$(NC)"
+	@echo "$(GREEN)API docs at: http://localhost:8000/docs$(NC)"
+	cd src && uv run python api.py
 
 build: ## Build agent
 	@echo "$(BLUE)Building agent...$(NC)"
@@ -97,7 +104,7 @@ undeploy: ## Remove deployment
 	# Add undeploy steps here
 	@echo "$(GREEN)Undeploy complete!$(NC)"
 
-check: lint type-check test ## Run all quality checks
+all: build lint test ## Build and run all quality checks
 	@echo "$(GREEN)All checks passed!$(NC)"
 
 validate-dataset: ## Validate ground truth dataset

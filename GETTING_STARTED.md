@@ -70,14 +70,20 @@ make test
 ### 5. Test the Loan Approval Agent Locally
 
 ```bash
-# Navigate to loan approval agent
-cd agents/loan-approval
+# Run from the project root (recommended - validates .env automatically)
+make run
 
-# Run the agent API locally
+# Or navigate to loan approval agent directory
+cd agents/loan-approval
 make run-local
 ```
 
-The API will start on `http://localhost:8000`. Open another terminal and test it:
+The API will start on `http://localhost:8000`. You can access:
+- **API**: http://localhost:8000
+- **Interactive API docs**: http://localhost:8000/docs
+- **Health check**: http://localhost:8000/health
+
+Open another terminal and test it:
 
 ```bash
 # Test API health check

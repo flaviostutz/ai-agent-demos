@@ -97,18 +97,36 @@ make setup
 source .venv/bin/activate
 ```
 
-3. **Run an agent locally**:
+3. **Configure environment variables**:
 ```bash
+# Copy the example environment file
+cp .env.example .env
+
+# Edit .env with your configuration (especially OPENAI_API_KEY)
+nano .env
+```
+
+4. **Run the loan approval agent locally**:
+```bash
+# From the project root (recommended)
+make run
+
+# Or from the agent directory
 cd agents/loan-approval
 make run-local
 ```
 
-4. **Run tests**:
+The API will be available at:
+- API: http://localhost:8000
+- Interactive docs: http://localhost:8000/docs
+- Health check: http://localhost:8000/health
+
+5. **Run tests**:
 ```bash
 make test
 ```
 
-5. **Check code quality**:
+6. **Check code quality**:
 ```bash
 make lint
 ```
@@ -119,21 +137,32 @@ make lint
 - `make setup` - Initial project setup with UV
 - `make install` - Install all dependencies with UV
 - `make sync` - Sync dependencies to exact versions
+- `make run` - Run the loan approval agent locally (with .env validation)
 - `make lint` - Run linters across all agents
 - `make test` - Run all tests
+- `make test-integration` - Run integration tests
+- `make test-performance` - Run performance tests
 - `make build` - Build all agents
+- `make deploy` - Deploy all agents
+- `make undeploy` - Undeploy all agents
 - `make clean` - Clean build artifacts
 - `make check-uv` - Verify UV installation
+- `make ci` - Run full CI pipeline locally
 
 ### Agent Level (in agents/*/Makefile)
 - `make install` - Install agent dependencies
-- `make lint` - Lint agent code
-- `make test` - Run agent tests
+- `make clean` - Clean build artifacts
+- `make lint` - Run linters (ruff check, format check, and type check)
+- `make lint-fix` - Auto-fix linting issues
+- `make test` - Run all unit tests
+- `make test-integration` - Run integration tests
+- `make test-performance` - Run performance tests
 - `make run-local` - Run agent locally
 - `make build` - Build agent
-- `make deploy` - Deploy agent
+- `make deploy` - Deploy agent to environment
 - `make undeploy` - Remove deployment
-- `make performance-test` - Run performance tests
+- `make all` - Build and run all quality checks
+- `make validate-dataset` - Validate ground truth dataset (loan approval specific)
 
 ## 🔄 Development Workflow
 

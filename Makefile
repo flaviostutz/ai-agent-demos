@@ -1,4 +1,4 @@
-.PHONY: help setup install clean lint lint-fix test build deploy undeploy test-integration performance-test format type-check
+.PHONY: help setup install sync clean lint lint-fix test test-integration test-performance run build deploy undeploy all ci check-uv
 
 # Default target
 .DEFAULT_GOAL := help
@@ -100,6 +100,20 @@ test-performance: ## Run performance tests
 	@echo "$(BLUE)Running performance tests...$(NC)"
 	uv run pytest -v -m performance
 	@echo "$(GREEN)Performance tests complete!$(NC)"
+
+run: check-uv ## Run the loan approval agent locally
+	@echo "$(BLUE)Starting loan approval agent locally...$(NC)"
+	@if [ ! -f .env ]; then \
+		echo "$(YELLOW)Warning: .env file not found. Creating from .env.example...$(NC)"; \
+		cp .env.example .env; \
+		echo "$(YELLOW)Please edit .env with your configuration (especially OPENAI_API_KEY)$(NC)"; \
+		echo "$(RED)Stopping - please configure .env before running$(NC)"; \
+		exit 1; \
+	fi
+	@echo "$(GREEN)Environment loaded from .env$(NC)"
+	@echo "$(YELLOW)API will be available at: http://localhost:8000$(NC)"
+	@echo "$(YELLOW)API docs at: http://localhost:8000/docs$(NC)"
+	cd agents/loan_approval/src && uv run python api.py
 
 build: ## Build all agents
 	@echo "$(BLUE)Building all agents...$(NC)"
