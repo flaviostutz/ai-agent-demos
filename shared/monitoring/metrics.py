@@ -51,8 +51,8 @@ class MetricsTracker:
             with mlflow.start_run(run_name=name):
                 logger.info(f"Started MLFlow run: {name}")
                 yield
-        except Exception as e:
-            logger.error(f"Error in MLFlow run: {e}")
+        except Exception:
+            logger.exception("Error in MLFlow run")
             raise
         finally:
             logger.info(f"Ended MLFlow run: {name}")

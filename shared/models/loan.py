@@ -1,10 +1,11 @@
 """Loan request and response data models."""
 
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from decimal import Decimal
 from enum import Enum
+from typing import Any
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
 class EmploymentStatus(str, Enum):
@@ -51,10 +52,11 @@ class ApplicantInfo(BaseModel):
     state: str = Field(..., min_length=2, max_length=2)
     zip_code: str = Field(..., pattern=r"^\d{5}(-\d{4})?$")
 
-    @validator("date_of_birth")
+    @field_validator("date_of_birth")
+    @classmethod
     def validate_age(cls, v: date) -> date:
         """Validate applicant is at least 18 years old."""
-        today = date.today()
+        today = datetime.now(tz=timezone.utc).date()
         age = today.year - v.year - ((today.month, today.day) < (v.month, v.day))
         if age < 18:
             raise ValueError("Applicant must be at least 18 years old")
@@ -73,13 +75,13 @@ class EmploymentInfo(BaseModel):
     monthly_income: Decimal = Field(..., gt=0, le=1000000)
     additional_income: Decimal | None = Field(default=Decimal(0), ge=0, le=1000000)
 
-    @validator("employer_name", "job_title")
-    def validate_employment_details(cls, v: str | None, values: dict) -> str | None:
+    @model_validator(mode="after")
+    def validate_employment_details(self) -> "EmploymentInfo":
         """Validate employment details are provided for employed applicants."""
-        if values.get("status") in [EmploymentStatus.EMPLOYED, EmploymentStatus.SELF_EMPLOYED]:
-            if not v:
+        if self.status in [EmploymentStatus.EMPLOYED, EmploymentStatus.SELF_EMPLOYED]:
+            if not self.employer_name or not self.job_title:
                 raise ValueError("Employer name and job title required for employed applicants")
-        return v
+        return self
 
 
 class FinancialInfo(BaseModel):
@@ -94,19 +96,14 @@ class FinancialInfo(BaseModel):
     has_foreclosure: bool = Field(default=False)
     foreclosure_date: date | None = None
 
-    @validator("bankruptcy_date")
-    def validate_bankruptcy_date(cls, v: date | None, values: dict) -> date | None:
-        """Validate bankruptcy date if bankruptcy exists."""
-        if values.get("has_bankruptcy") and not v:
+    @model_validator(mode="after")
+    def validate_dates(self) -> "FinancialInfo":
+        """Validate bankruptcy and foreclosure dates."""
+        if self.has_bankruptcy and not self.bankruptcy_date:
             raise ValueError("Bankruptcy date required when has_bankruptcy is True")
-        return v
-
-    @validator("foreclosure_date")
-    def validate_foreclosure_date(cls, v: date | None, values: dict) -> date | None:
-        """Validate foreclosure date if foreclosure exists."""
-        if values.get("has_foreclosure") and not v:
+        if self.has_foreclosure and not self.foreclosure_date:
             raise ValueError("Foreclosure date required when has_foreclosure is True")
-        return v
+        return self
 
 
 class CreditHistory(BaseModel):
@@ -131,21 +128,15 @@ class LoanDetails(BaseModel):
     property_value: Decimal | None = Field(None, gt=0)
     down_payment: Decimal | None = Field(default=Decimal(0), ge=0)
 
-    @validator("property_value")
-    def validate_property_value(cls, v: Decimal | None, values: dict) -> Decimal | None:
-        """Validate property value for home loans."""
-        purpose = values.get("purpose")
-        if purpose in [LoanPurpose.HOME_PURCHASE, LoanPurpose.HOME_REFINANCE]:
-            if not v or v <= 0:
+    @model_validator(mode="after")
+    def validate_loan_values(self) -> "LoanDetails":
+        """Validate property value and down payment."""
+        if self.purpose in [LoanPurpose.HOME_PURCHASE, LoanPurpose.HOME_REFINANCE]:
+            if not self.property_value or self.property_value <= 0:
                 raise ValueError("Property value required for home loans")
-        return v
-
-    @validator("down_payment")
-    def validate_down_payment(cls, v: Decimal | None, values: dict) -> Decimal | None:
-        """Validate down payment doesn't exceed loan amount."""
-        if v and values.get("amount") and v >= values["amount"]:
+        if self.down_payment and self.down_payment >= self.amount:
             raise ValueError("Down payment must be less than loan amount")
-        return v
+        return self
 
 
 class LoanRequest(BaseModel):
@@ -159,14 +150,13 @@ class LoanRequest(BaseModel):
     loan_details: LoanDetails
     timestamp: datetime = Field(default_factory=datetime.utcnow)
 
-    class Config:
-        """Pydantic config."""
-
-        json_encoders = {
+    model_config = ConfigDict(
+        json_encoders={
             datetime: lambda v: v.isoformat(),
             date: lambda v: v.isoformat(),
             Decimal: lambda v: str(v),
         }
+    )
 
 
 class LoanDecision(BaseModel):
@@ -181,28 +171,21 @@ class LoanDecision(BaseModel):
     interest_rate: Decimal | None = Field(None, ge=0, le=100)
     monthly_payment: Decimal | None = Field(None, gt=0)
 
-    @validator("risk_score")
-    def validate_risk_score_for_approval(cls, v: int | None, values: dict) -> int | None:
-        """Validate risk score is provided for approved decisions."""
-        if values.get("decision") == DecisionType.APPROVED and v is None:
+    @model_validator(mode="after")
+    def validate_decision_fields(self) -> "LoanDecision":
+        """Validate required fields based on decision type."""
+        if self.decision == DecisionType.APPROVED and self.risk_score is None:
             raise ValueError("Risk score required for approved loans")
-        return v
-
-    @validator("disapproval_reason")
-    def validate_disapproval_reason(cls, v: str | None, values: dict) -> str | None:
-        """Validate disapproval reason is provided for disapproved decisions."""
-        if values.get("decision") == DecisionType.DISAPPROVED and not v:
+        if self.decision == DecisionType.DISAPPROVED and not self.disapproval_reason:
             raise ValueError("Disapproval reason required for disapproved loans")
-        return v
-
-    @validator("additional_info_description")
-    def validate_additional_info(cls, v: str | None, values: dict) -> str | None:
-        """Validate additional info description is provided when needed."""
-        if values.get("decision") == DecisionType.ADDITIONAL_INFO_NEEDED and not v:
+        if (
+            self.decision == DecisionType.ADDITIONAL_INFO_NEEDED
+            and not self.additional_info_description
+        ):
             raise ValueError(
                 "Additional info description required for additional_info_needed decisions"
             )
-        return v
+        return self
 
 
 class LoanOutcome(BaseModel):
@@ -215,10 +198,9 @@ class LoanOutcome(BaseModel):
     timestamp: datetime = Field(default_factory=datetime.utcnow)
     agent_trace_id: str | None = None
 
-    class Config:
-        """Pydantic config."""
-
-        json_encoders = {
+    model_config = ConfigDict(
+        json_encoders={
             datetime: lambda v: v.isoformat(),
             Decimal: lambda v: str(v),
         }
+    )

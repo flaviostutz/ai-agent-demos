@@ -109,7 +109,7 @@ performance-test: ## Run performance tests
 	uv run pytest -v -m performance
 	@echo "$(GREEN)Performance tests complete!$(NC)"
 
-build: ## Build all agents
+build: type-check ## Build all agents
 	@echo "$(BLUE)Building all agents...$(NC)"
 	@for agent in agents/*/; do \
 		if [ -f "$$agent/Makefile" ]; then \

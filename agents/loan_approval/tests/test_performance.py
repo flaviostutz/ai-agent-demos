@@ -17,7 +17,7 @@ pytestmark = pytest.mark.performance
 def load_ground_truth_dataset() -> dict[str, Any]:
     """Load the ground truth dataset."""
     dataset_path = Path(__file__).parent.parent / "datasets" / "ground_truth.json"
-    with open(dataset_path) as f:
+    with dataset_path.open() as f:
         return json.load(f)
 
 
@@ -54,7 +54,7 @@ class TestAgentPerformance:
             expected_risk_range = test_case.get("expected_risk_score_range")
 
             # Create loan request
-            request = LoanRequest(**request_data)
+            LoanRequest(**request_data)
 
             # Note: In a real test, we would call the agent here
             # For now, we'll simulate the test structure
@@ -115,22 +115,9 @@ class TestAgentPerformance:
             )
 
         # Print results
-        print(f"\n{'=' * 80}")
-        print("Performance Test Results - Ground Truth Dataset")
-        print(f"{'=' * 80}")
-        print(f"Total test cases: {total_cases}")
-        print(f"Correct decisions: {correct_decisions}")
-        print(f"Accuracy: {accuracy:.2f}%")
-        print(f"Average processing time: {avg_processing_time:.2f}ms")
-        print(f"{'=' * 80}\n")
 
         for result in results:
-            status = "✓" if result["decision_correct"] and result["risk_score_correct"] else "✗"
-            print(f"{status} {result['request_id']}: {result['description']}")
-            print(
-                f"  Expected: {result['expected_decision']} | Actual: {result['actual_decision']}"
-            )
-            print(f"  Processing time: {result['processing_time_ms']}ms\n")
+            "✓" if result["decision_correct"] and result["risk_score_correct"] else "✗"
 
         # Assert minimum accuracy threshold
         assert accuracy >= 80.0, f"Accuracy {accuracy:.2f}% is below 80% threshold"
@@ -142,7 +129,7 @@ class TestAgentPerformance:
 
         for test_case in test_cases:
             request_data = test_case["request"]
-            request = LoanRequest(**request_data)
+            LoanRequest(**request_data)
 
             start_time = time.time()
             # Note: In real test, call agent here
@@ -155,12 +142,7 @@ class TestAgentPerformance:
         # Calculate statistics
         avg_time = sum(processing_times) / len(processing_times)
         max_time = max(processing_times)
-        min_time = min(processing_times)
-
-        print("\nProcessing Time Statistics:")
-        print(f"  Average: {avg_time:.2f}ms")
-        print(f"  Min: {min_time:.2f}ms")
-        print(f"  Max: {max_time:.2f}ms")
+        min(processing_times)
 
         # Assert performance requirements
         assert avg_time < 5000, f"Average processing time {avg_time:.2f}ms exceeds 5000ms"
@@ -181,10 +163,8 @@ class TestAgentPerformance:
             expected_distribution[expected_decision] += 1
 
         total = len(test_cases)
-        print("\nExpected Decision Distribution:")
-        for decision, count in expected_distribution.items():
-            percentage = (count / total) * 100
-            print(f"  {decision}: {count} ({percentage:.1f}%)")
+        for count in expected_distribution.values():
+            (count / total) * 100
 
         # Ensure we have test cases for all decision types
         for decision_type in DecisionType:
@@ -217,10 +197,9 @@ class TestModelConsistency:
         """Test that same input produces same output."""
         test_case = ground_truth_data["test_cases"][0]
         request_data = test_case["request"]
-        request = LoanRequest(**request_data)
+        LoanRequest(**request_data)
 
         # Process same request multiple times
-        results = []
         for _ in range(3):
             # Note: In real test, call agent here
             # outcome = agent.process_loan_request(request)

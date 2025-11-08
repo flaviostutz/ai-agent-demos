@@ -1,6 +1,7 @@
 """Script to generate sample loan policy PDF documents."""
 
-import os
+import logging
+from pathlib import Path
 
 from reportlab.lib.enums import TA_CENTER
 from reportlab.lib.pagesizes import letter
@@ -9,13 +10,15 @@ from reportlab.lib.units import inch
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer
 
 # Get the directory of this script
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+SCRIPT_DIR = Path(__file__).parent
+
+logger = logging.getLogger(__name__)
 
 
-def create_loan_policy_v1():
+def create_loan_policy_v1() -> None:
     """Create internal loan policy document."""
-    pdf_path = os.path.join(SCRIPT_DIR, "loan_policy_v1.pdf")
-    doc = SimpleDocTemplate(pdf_path, pagesize=letter)
+    pdf_path = SCRIPT_DIR / "loan_policy_v1.pdf"
+    doc = SimpleDocTemplate(str(pdf_path), pagesize=letter)
     styles = getSampleStyleSheet()
     story = []
 
@@ -39,12 +42,12 @@ def create_loan_policy_v1():
 
     content = """
     All loan applicants must meet minimum credit score requirements based on loan type:
-    
+
     • Personal Loans: Minimum credit score of 620
-    • Auto Loans: Minimum credit score of 600  
+    • Auto Loans: Minimum credit score of 600
     • Home Purchase/Refinance: Minimum credit score of 640
     • Business Loans: Minimum credit score of 680
-    
+
     Applicants with credit scores below these thresholds require executive approval and must provide
     additional documentation including proof of income stability and collateral where applicable.
     """
@@ -96,13 +99,14 @@ def create_loan_policy_v1():
 
     content = """
     The following waiting periods apply after adverse credit events:
-    
+
     • Bankruptcy (Chapter 7): Minimum 7 years from discharge date
-    • Bankruptcy (Chapter 13): Minimum 4 years from discharge date (2 years with extenuating circumstances)
+    • Bankruptcy (Chapter 13): Minimum 4 years from discharge date
+      (2 years with extenuating circumstances)
     • Foreclosure: Minimum 7 years from completion date
     • Short Sale/Deed-in-Lieu: Minimum 4 years from completion date
     • Late Payments: No more than 2 late payments in the last 12 months
-    
+
     Exceptions may be granted for documented extenuating circumstances (medical emergency, job loss
     due to economic conditions) with executive approval.
     """
@@ -168,13 +172,13 @@ def create_loan_policy_v1():
     story.append(Paragraph(content, styles["BodyText"]))
 
     doc.build(story)
-    print(f"Generated: {pdf_path}")
+    logger.info("Generated: %s", pdf_path)
 
 
-def create_best_practices():
+def create_best_practices() -> None:
     """Create industry best practices document."""
-    pdf_path = os.path.join(SCRIPT_DIR, "best_practices.pdf")
-    doc = SimpleDocTemplate(pdf_path, pagesize=letter)
+    pdf_path = SCRIPT_DIR / "best_practices.pdf"
+    doc = SimpleDocTemplate(str(pdf_path), pagesize=letter)
     styles = getSampleStyleSheet()
     story = []
 
@@ -198,8 +202,9 @@ def create_best_practices():
 
     content = """
     This document outlines industry best practices for loan underwriting, based on guidelines from
-    federal agencies, industry associations, and market standards. These practices should be followed
-    to ensure prudent lending decisions while maintaining compliance with regulatory requirements.
+    federal agencies, industry associations, and market standards. These practices should be
+    followed to ensure prudent lending decisions while maintaining compliance with regulatory
+    requirements.
     """
     story.append(Paragraph(content, styles["BodyText"]))
     story.append(Spacer(1, 0.3 * inch))
@@ -342,11 +347,12 @@ def create_best_practices():
     story.append(Paragraph(content, styles["BodyText"]))
 
     doc.build(story)
-    print(f"Generated: {pdf_path}")
+    logger.info("Generated: %s", pdf_path)
 
 
 if __name__ == "__main__":
-    print("Generating loan policy PDF documents...")
+    logging.basicConfig(level=logging.INFO)
+    logger.info("Generating loan policy PDF documents...")
     create_loan_policy_v1()
     create_best_practices()
-    print("PDF generation complete!")
+    logger.info("PDF generation complete!")

@@ -19,7 +19,7 @@ class AgentConfig(BaseSettings):
     environment: str = "development"
 
     # LLM settings
-    openai_api_key: str
+    openai_api_key: str = "test-key"  # Default for testing
     openai_model: str = "gpt-4"
     openai_temperature: float = 0.0
     openai_max_tokens: int = 2000
@@ -42,7 +42,9 @@ class AgentConfig(BaseSettings):
     policies_directory: str = "./policies"
 
     # API settings
-    api_host: str = "0.0.0.0"
+    # Binding to 0.0.0.0 allows container networking
+    # Restrict in production via firewall/security groups
+    api_host: str = "0.0.0.0"  # noqa: S104
     api_port: int = 8000
 
     # Risk scoring thresholds

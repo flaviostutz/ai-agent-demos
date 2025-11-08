@@ -6,6 +6,7 @@ from decimal import Decimal
 import pytest
 from agents.loan_approval.src.config import AgentConfig
 from agents.loan_approval.src.tools import RiskCalculator
+from pydantic import ValidationError
 
 from shared.models.loan import (
     ApplicantInfo,
@@ -179,7 +180,7 @@ class TestLoanRequestValidation:
 
     def test_invalid_ssn_format(self) -> None:
         """Test that invalid SSN format raises validation error."""
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError, match=r"String should match pattern"):
             ApplicantInfo(
                 first_name="John",
                 last_name="Doe",
@@ -211,7 +212,7 @@ class TestLoanRequestValidation:
 
     def test_negative_income(self) -> None:
         """Test that negative income raises validation error."""
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match=r"income|positive"):
             EmploymentInfo(
                 status=EmploymentStatus.EMPLOYED,
                 employer_name="Company",
@@ -224,14 +225,14 @@ class TestLoanRequestValidation:
     def test_credit_score_bounds(self) -> None:
         """Test that credit score must be within valid range."""
         # Too low
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match=r"credit score|300|850"):
             CreditHistory(
                 credit_score=250,  # Below 300
                 number_of_credit_cards=1,
             )
 
         # Too high
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match=r"credit score|300|850"):
             CreditHistory(
                 credit_score=900,  # Above 850
                 number_of_credit_cards=1,

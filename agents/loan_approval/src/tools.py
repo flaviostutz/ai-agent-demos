@@ -1,6 +1,6 @@
 """Tools and utilities for loan approval agent."""
 
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from typing import Any
 
 from agents.loan_approval.src.config import AgentConfig
@@ -24,7 +24,7 @@ class RiskCalculator:
         """
         self.config = config
 
-    def calculate_risk_score(self, request: LoanRequest, dti_ratio: float) -> int:
+    def calculate_risk_score(self, request: LoanRequest, dti_ratio: float) -> int:  # noqa: PLR0915
         """Calculate comprehensive risk score (0-100, where 100 is highest risk).
 
         Args:
@@ -137,7 +137,7 @@ class RiskCalculator:
         """Calculate years since a past date."""
         if not past_date:
             return None
-        delta = datetime.now().date() - past_date
+        delta = datetime.now(tz=timezone.utc).date() - past_date
         return delta.days / 365.25
 
 
@@ -182,7 +182,8 @@ Loan Application Summary:
 - Has Foreclosure: {request.financial.has_foreclosure}
 """
 
-        prompt = f"""You are a loan policy compliance expert. Review the following loan application against the provided policy documents and determine if it complies with all policies.
+        prompt = f"""You are a loan policy compliance expert. Review the following loan \
+application against the provided policy documents and determine if it complies with all policies.
 
 POLICY DOCUMENTS:
 {self.policy_content[:3000]}  # Truncate for token limits
@@ -216,7 +217,7 @@ Be strict in your evaluation and ensure all policy requirements are met.
                 # Simple extraction - in production use JSON parsing
                 parts = result_text.split('"reason"')
                 if len(parts) > 1:
-                    reason_part = parts[1].split('"')[1] if '"' in parts[1] else reason
+                    parts[1].split('"')[1] if '"' in parts[1] else reason
 
             return {
                 "compliant": False,
@@ -224,8 +225,8 @@ Be strict in your evaluation and ensure all policy requirements are met.
                 "notes": result_text[:200],
             }
 
-        except Exception as e:
-            logger.error(f"Error in policy compliance check: {e}")
+        except Exception:
+            logger.exception("Error in policy compliance check")
             # Default to compliant on error to avoid false rejections
             return {
                 "compliant": True,

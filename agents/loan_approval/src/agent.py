@@ -1,7 +1,7 @@
 """Loan approval agent implementation with LangGraph."""
 
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 from decimal import Decimal
 from typing import Any
 
@@ -77,8 +77,8 @@ class LoanApprovalAgent:
             content = PDFLoader.load_directory(self.config.policies_directory)
             logger.info("Policy documents loaded successfully")
             return content
-        except Exception as e:
-            logger.error(f"Failed to load policy documents: {e}")
+        except Exception:
+            logger.exception("Failed to load policy documents")
             return ""
 
     def _build_workflow(self) -> StateGraph:
@@ -113,12 +113,10 @@ class LoanApprovalAgent:
     def _validate_input(self, state: AgentState) -> AgentState:
         """Validate input data."""
         logger.info("Validating input data")
-        request: LoanRequest = state["request"]
+        state["request"]
 
         # Security check
-        self.security_context.require_all_permissions(
-            *[p for p in self.security_context.permissions]
-        )
+        self.security_context.require_all_permissions(*list(self.security_context.permissions))
 
         state["validation_passed"] = True
         state["validation_errors"] = []
@@ -317,7 +315,7 @@ class LoanApprovalAgent:
                     decision=decision,
                     processing_time_ms=processing_time_ms,
                     model_version=self.config.agent_version,
-                    timestamp=datetime.utcnow(),
+                    timestamp=datetime.now(tz=timezone.utc),
                     agent_trace_id=trace_id,
                 )
 
@@ -326,14 +324,16 @@ class LoanApprovalAgent:
                 )
                 return outcome
 
-        except Exception as e:
-            logger.error(f"Error processing loan request {request.request_id}: {e}")
+        except Exception:
+            logger.exception(f"Error processing loan request {request.request_id}")
             processing_time_ms = int((time.time() - start_time) * 1000)
 
             # Return error decision
             error_decision = LoanDecision(
                 decision=DecisionType.ADDITIONAL_INFO_NEEDED,
-                additional_info_description="Unable to process request due to system error. Please try again later.",
+                additional_info_description=(
+                    "Unable to process request due to system error. Please try again later."
+                ),
             )
 
             return LoanOutcome(
@@ -341,6 +341,6 @@ class LoanApprovalAgent:
                 decision=error_decision,
                 processing_time_ms=processing_time_ms,
                 model_version=self.config.agent_version,
-                timestamp=datetime.utcnow(),
+                timestamp=datetime.now(tz=timezone.utc),
                 agent_trace_id=trace_id,
             )

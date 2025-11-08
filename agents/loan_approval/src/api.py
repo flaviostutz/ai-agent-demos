@@ -36,13 +36,13 @@ agent: LoanApprovalAgent | None = None
 @app.on_event("startup")
 async def startup_event() -> None:
     """Initialize agent on startup."""
-    global agent
+    global agent  # noqa: PLW0603
     logger.info("Starting Loan Approval Agent API")
     try:
         agent = LoanApprovalAgent()
         logger.info("Agent initialized successfully")
-    except Exception as e:
-        logger.error(f"Failed to initialize agent: {e}")
+    except Exception:
+        logger.exception("Failed to initialize agent")
         raise
 
 
@@ -71,7 +71,7 @@ async def health() -> dict:
     }
 
 
-@app.post("/api/v1/loan/evaluate", response_model=LoanOutcome)
+@app.post("/api/v1/loan/evaluate")
 async def evaluate_loan(request: LoanRequest) -> LoanOutcome:
     """Evaluate a loan application.
 
@@ -100,11 +100,11 @@ async def evaluate_loan(request: LoanRequest) -> LoanOutcome:
         )
         return outcome
     except Exception as e:
-        logger.error(f"Error processing loan request {request.request_id}: {e}")
+        logger.exception(f"Error processing loan request {request.request_id}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error processing loan request: {e!s}",
-        )
+        ) from e
 
 
 @app.get("/api/v1/metrics")

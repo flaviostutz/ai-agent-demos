@@ -53,8 +53,8 @@ class TeamsNotifier:
             message.send()
             logger.info(f"Teams notification sent: {title}")
             return True
-        except Exception as e:
-            logger.error(f"Failed to send Teams notification: {e}")
+        except Exception:
+            logger.exception("Failed to send Teams notification")
             return False
 
     def send_success(self, title: str, details: dict | None = None) -> bool:

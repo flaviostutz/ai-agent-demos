@@ -35,7 +35,7 @@ class PDFLoader:
             raise ValueError(f"File is not a PDF: {file_path}")
 
         try:
-            with open(file_path, "rb") as file:
+            with path.open("rb") as file:
                 pdf_reader = PyPDF2.PdfReader(file)
                 text_content = []
 
@@ -44,15 +44,15 @@ class PDFLoader:
                         page_text = page.extract_text()
                         if page_text:
                             text_content.append(page_text)
-                    except Exception as e:
-                        logger.warning(f"Failed to extract text from page {page_num}: {e}")
+                    except Exception:
+                        logger.warning(f"Failed to extract text from page {page_num}")
 
                 result = "\n\n".join(text_content)
                 logger.info(f"Loaded PDF: {file_path} ({len(pdf_reader.pages)} pages)")
                 return result
 
-        except Exception as e:
-            logger.error(f"Error loading PDF {file_path}: {e}")
+        except Exception:
+            logger.exception(f"Error loading PDF {file_path}")
             raise
 
     @staticmethod
@@ -71,8 +71,8 @@ class PDFLoader:
             try:
                 content = PDFLoader.load_pdf(file_path)
                 all_content.append(f"=== Document: {Path(file_path).name} ===\n\n{content}")
-            except Exception as e:
-                logger.error(f"Failed to load {file_path}: {e}")
+            except Exception:
+                logger.exception(f"Failed to load {file_path}")
 
         return "\n\n" + "=" * 80 + "\n\n".join(all_content)
 
