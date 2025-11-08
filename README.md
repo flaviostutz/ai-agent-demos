@@ -41,12 +41,12 @@ This monorepo follows enterprise-grade practices for AI agent development and de
 
 ### Prerequisites
 
-- Python 3.10+
-- [UV](https://github.com/astral-sh/uv) - Fast Python package installer
-- Make
-- Docker (optional, for local testing)
-- Databricks CLI
-- Terraform
+- **Python 3.10+** installed
+- **[UV](https://github.com/astral-sh/uv)** - Fast Python package installer
+- **Make** utility installed
+- **Git** for version control
+- **OpenAI API key** (for LLM functionality)
+- **Databricks account** (optional, for production deployment)
 
 ### Install UV
 
@@ -59,6 +59,120 @@ pip install uv
 
 # Or with Homebrew
 brew install uv
+```
+
+### 5-Minute Setup
+
+1. **Clone and setup**:
+```bash
+git clone <repository-url>
+cd ai-agent-demos
+make setup
+```
+
+2. **Activate virtual environment**:
+```bash
+source .venv/bin/activate
+```
+
+3. **Configure API key** (choose one option):
+
+**Option A: Use macOS Keychain (Recommended for security)**
+```bash
+# Store your OpenAI API key securely in Keychain
+make set-openai-key
+# You'll be prompted to enter your key - it will be stored securely
+
+# Copy and configure remaining environment variables
+cp .env.example .env
+nano .env  # Configure other settings (OPENAI_API_KEY not needed)
+```
+
+**Option B: Use environment file**
+```bash
+# Copy the example environment file
+cp .env.example .env
+
+# Edit .env with your configuration (especially OPENAI_API_KEY)
+nano .env
+```
+
+The application will check Keychain first, then fall back to environment variables.
+
+**Tip:** See available keychain commands with `make help` (look for `set-openai-key`, `get-openai-key`, `delete-openai-key`)
+
+4. **Generate policy documents** (optional):
+```bash
+cd agents/loan-approval/policies
+python generate_policies.py
+cd ../../..
+```
+
+5. **Run the loan approval agent**:
+```bash
+make run
+```
+
+The API will be available at:
+- **API**: http://localhost:8000
+- **Interactive docs**: http://localhost:8000/docs
+- **Health check**: http://localhost:8000/health
+
+6. **Test the API**:
+```bash
+# Health check
+curl http://localhost:8000/health
+
+# Example loan evaluation
+curl -X POST http://localhost:8000/api/v1/loan/evaluate \
+  -H "Content-Type: application/json" \
+  -d '{
+    "request_id": "test-001",
+    "applicant": {
+      "first_name": "John",
+      "last_name": "Doe",
+      "date_of_birth": "1985-06-15",
+      "ssn": "123-45-6789",
+      "email": "john.doe@email.com",
+      "phone": "+15551234567",
+      "address": "123 Main St",
+      "city": "Springfield",
+      "state": "IL",
+      "zip_code": "62701"
+    },
+    "employment": {
+      "status": "employed",
+      "employer_name": "Tech Corp",
+      "job_title": "Engineer",
+      "years_employed": 5.0,
+      "monthly_income": 8000,
+      "additional_income": 0
+    },
+    "financial": {
+      "monthly_debt_payments": 1500,
+      "checking_balance": 10000,
+      "savings_balance": 25000,
+      "has_bankruptcy": false,
+      "has_foreclosure": false
+    },
+    "credit_history": {
+      "credit_score": 720,
+      "number_of_credit_cards": 3,
+      "total_credit_limit": 40000,
+      "credit_utilization": 30,
+      "number_of_late_payments_12m": 0,
+      "number_of_late_payments_24m": 0,
+      "number_of_inquiries_6m": 1,
+      "oldest_credit_line_years": 10
+    },
+    "loan_details": {
+      "amount": 300000,
+      "purpose": "home_purchase",
+      "term_months": 360,
+      "property_value": 350000,
+      "down_payment": 50000
+    }
+  }'
 ```
 
 ### Configure Artifactory (Corporate Environment)
@@ -83,53 +197,9 @@ export UV_INDEX_URL="https://your-artifactory.company.com/artifactory/api/pypi/p
 export UV_EXTRA_INDEX_URL="https://pypi.org/simple"  # Optional fallback
 ```
 
-### Local Development
+## 🛠️ Development Workflow
 
-1. **Clone and setup**:
-```bash
-git clone <repository-url>
-cd ai-agent-demos
-make setup
-```
-
-2. **Activate virtual environment**:
-```bash
-source .venv/bin/activate
-```
-
-3. **Configure environment variables**:
-```bash
-# Copy the example environment file
-cp .env.example .env
-
-# Edit .env with your configuration (especially OPENAI_API_KEY)
-nano .env
-```
-
-4. **Run the loan approval agent locally**:
-```bash
-# From the project root (recommended)
-make run
-
-# Or from the agent directory
-cd agents/loan-approval
-make run-local
-```
-
-The API will be available at:
-- API: http://localhost:8000
-- Interactive docs: http://localhost:8000/docs
-- Health check: http://localhost:8000/health
-
-5. **Run tests**:
-```bash
-make test
-```
-
-6. **Check code quality**:
-```bash
-make lint
-```
+### 1. Create Feature Branch
 
 ## 📝 Available Make Targets
 
@@ -137,9 +207,13 @@ make lint
 - `make setup` - Initial project setup with UV
 - `make install` - Install all dependencies with UV
 - `make sync` - Sync dependencies to exact versions
-- `make run` - Run the loan approval agent locally (with .env validation)
+- `make set-openai-key` - Store OpenAI API key in macOS Keychain (secure)
+- `make get-openai-key` - Retrieve OpenAI API key from Keychain
+- `make delete-openai-key` - Delete OpenAI API key from Keychain
+- `make run` - Run the loan approval agent locally
 - `make lint` - Run linters across all agents
-- `make test` - Run all tests
+- `make lint-fix` - Auto-fix linting issues
+- `make test` - Run all unit tests
 - `make test-integration` - Run integration tests
 - `make test-performance` - Run performance tests
 - `make build` - Build all agents
@@ -152,7 +226,7 @@ make lint
 ### Agent Level (in agents/*/Makefile)
 - `make install` - Install agent dependencies
 - `make clean` - Clean build artifacts
-- `make lint` - Run linters (ruff check, format check, and type check)
+- `make lint` - Run linters
 - `make lint-fix` - Auto-fix linting issues
 - `make test` - Run all unit tests
 - `make test-integration` - Run integration tests
@@ -164,33 +238,41 @@ make lint
 - `make all` - Build and run all quality checks
 - `make validate-dataset` - Validate ground truth dataset (loan approval specific)
 
-## 🔄 Development Workflow
+## 📊 Monitoring and Observability
 
-1. **Create a feature branch**:
+
+### 1. Create Feature Branch
 ```bash
 git checkout -b feature/your-feature-name
 ```
 
-2. **Make changes and test locally**:
+### 2. Make Changes and Test Locally
 ```bash
 make lint
 make test
 ```
 
-3. **Create a Pull Request**:
-   - PR will trigger automated checks
-   - Requires at least 1 approval
-   - All CI checks must pass
+### 3. Commit and Push
+```bash
+git add .
+git commit -m "feat: add new feature"
+git push origin feature/your-feature-name
+```
 
-4. **Merge to main**:
-   - Automatically deploys to Test environment
+### 4. Create Pull Request
+- PR will trigger automated checks
+- Requires at least 1 approval
+- All CI checks must pass
 
-5. **Create a release tag**:
+### 5. Merge to Main
+- Automatically deploys to Test environment
+
+### 6. Create Release Tag
 ```bash
 git tag -a v1.0.0 -m "Release v1.0.0"
 git push origin v1.0.0
 ```
-   - Automatically deploys to Acceptance and Production
+- Automatically deploys to Acceptance and Production
 
 ## 🧪 Testing
 
@@ -207,7 +289,61 @@ make test-integration
 ### Performance Tests
 ```bash
 cd agents/loan-approval
-make performance-test
+make test-performance
+```
+
+## 🔧 Troubleshooting
+
+### Virtual Environment Issues
+```bash
+# Remove and recreate
+rm -rf .venv
+make setup
+source .venv/bin/activate
+```
+
+### Import Errors
+```bash
+# Ensure you're in project root
+cd /path/to/ai-agent-demos
+
+# Reinstall in development mode
+make install
+```
+
+### Port Already in Use
+```bash
+# Find process using port 8000
+lsof -i :8000
+
+# Kill the process or use different port
+export API_PORT=8001
+make run
+```
+
+### MLFlow Tracking Issues
+```bash
+# Check if MLFlow directory exists
+ls -la mlruns/
+
+# Set tracking URI explicitly
+export MLFLOW_TRACKING_URI=./mlruns
+
+# Start MLFlow UI
+mlflow ui
+# Open browser to http://localhost:5000
+```
+
+### Tests Failing
+```bash
+# Clean everything
+make clean
+
+# Reinstall dependencies
+make install
+
+# Run tests with verbose output
+pytest -v -s
 ```
 
 ## 📊 Monitoring and Observability
@@ -218,9 +354,11 @@ make performance-test
 
 ## 🔒 Security
 
-- Context-based tool permissioning prevents data leakage
-- Secrets managed via environment variables
-- No credentials in code or version control
+- **Context-based tool permissioning** prevents data leakage
+- **macOS Keychain integration** for secure credential storage (see `make set-openai-key`)
+- **Secrets management** via Keychain or environment variables
+- **No credentials in code** or version control
+- See [SECURITY.md](SECURITY.md) for detailed security practices
 
 ## 📖 Documentation
 
