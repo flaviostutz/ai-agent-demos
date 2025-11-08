@@ -4,10 +4,10 @@ from datetime import date
 from decimal import Decimal
 
 import pytest
-from agents.loan_approval.src.config import AgentConfig
-from agents.loan_approval.src.tools import RiskCalculator
 from pydantic import ValidationError
 
+from agents.loan_approval.src.config import AgentConfig
+from agents.loan_approval.src.tools import RiskCalculator
 from shared.models.loan import (
     ApplicantInfo,
     CreditHistory,

@@ -3,7 +3,6 @@
 from datetime import date, datetime, timezone
 from decimal import Decimal
 from enum import Enum
-from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
@@ -78,9 +77,10 @@ class EmploymentInfo(BaseModel):
     @model_validator(mode="after")
     def validate_employment_details(self) -> "EmploymentInfo":
         """Validate employment details are provided for employed applicants."""
-        if self.status in [EmploymentStatus.EMPLOYED, EmploymentStatus.SELF_EMPLOYED]:
-            if not self.employer_name or not self.job_title:
-                raise ValueError("Employer name and job title required for employed applicants")
+        if self.status in [EmploymentStatus.EMPLOYED, EmploymentStatus.SELF_EMPLOYED] and (
+            not self.employer_name or not self.job_title
+        ):
+            raise ValueError("Employer name and job title required for employed applicants")
         return self
 
 
@@ -131,9 +131,10 @@ class LoanDetails(BaseModel):
     @model_validator(mode="after")
     def validate_loan_values(self) -> "LoanDetails":
         """Validate property value and down payment."""
-        if self.purpose in [LoanPurpose.HOME_PURCHASE, LoanPurpose.HOME_REFINANCE]:
-            if not self.property_value or self.property_value <= 0:
-                raise ValueError("Property value required for home loans")
+        if self.purpose in [LoanPurpose.HOME_PURCHASE, LoanPurpose.HOME_REFINANCE] and (
+            not self.property_value or self.property_value <= 0
+        ):
+            raise ValueError("Property value required for home loans")
         if self.down_payment and self.down_payment >= self.amount:
             raise ValueError("Down payment must be less than loan amount")
         return self

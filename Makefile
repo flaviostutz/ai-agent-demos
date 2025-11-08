@@ -68,17 +68,14 @@ clean: ## Clean build artifacts and cache files
 	rm -rf build/ dist/ 2>/dev/null || true
 	@echo "$(GREEN)Cleanup complete!$(NC)"
 
-format: ## Format code with ruff
-	@echo "$(BLUE)Formatting code...$(NC)"
-	uv run ruff format agents/ shared/
-	@echo "$(GREEN)Code formatted!$(NC)"
-
-lint: ## Run linters (ruff check and format check)
+lint: ## Run linters (ruff check, format check, and type check)
 	@echo "$(BLUE)Running linters...$(NC)"
 	@echo "$(YELLOW)Running ruff check...$(NC)"
 	uv run ruff check agents/ shared/
 	@echo "$(YELLOW)Running ruff format check...$(NC)"
 	uv run ruff format --check agents/ shared/
+	@echo "$(YELLOW)Running type checks...$(NC)"
+	uv run mypy agents/ shared/
 	@echo "$(GREEN)Linting complete!$(NC)"
 
 lint-fix: ## Auto-fix linting issues (ruff check and format)
@@ -88,11 +85,6 @@ lint-fix: ## Auto-fix linting issues (ruff check and format)
 	@echo "$(YELLOW)Running ruff format...$(NC)"
 	uv run ruff format agents/ shared/
 	@echo "$(GREEN)Linting fixes applied!$(NC)"
-
-type-check: ## Run mypy type checking
-	@echo "$(BLUE)Running type checks...$(NC)"
-	uv run mypy agents/ shared/
-	@echo "$(GREEN)Type checking complete!$(NC)"
 
 test: ## Run all unit tests
 	@echo "$(BLUE)Running tests...$(NC)"
@@ -104,12 +96,12 @@ test-integration: ## Run integration tests
 	uv run pytest -v -m integration
 	@echo "$(GREEN)Integration tests complete!$(NC)"
 
-performance-test: ## Run performance tests
+test-performance: ## Run performance tests
 	@echo "$(BLUE)Running performance tests...$(NC)"
 	uv run pytest -v -m performance
 	@echo "$(GREEN)Performance tests complete!$(NC)"
 
-build: type-check ## Build all agents
+build: ## Build all agents
 	@echo "$(BLUE)Building all agents...$(NC)"
 	@for agent in agents/*/; do \
 		if [ -f "$$agent/Makefile" ]; then \
@@ -139,8 +131,8 @@ undeploy: ## Undeploy all agents
 	done
 	@echo "$(GREEN)All agents undeployed!$(NC)"
 
-check: lint type-check test ## Run all quality checks (lint, type-check, test)
+all: build lint test
 	@echo "$(GREEN)All checks passed!$(NC)"
 
-ci: clean install check ## Run CI pipeline locally
+ci: clean install all ## Run CI pipeline locally
 	@echo "$(GREEN)CI pipeline complete!$(NC)"

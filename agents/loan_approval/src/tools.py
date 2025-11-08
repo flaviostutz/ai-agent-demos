@@ -3,9 +3,9 @@
 from datetime import date, datetime, timezone
 from typing import Any
 
-from agents.loan_approval.src.config import AgentConfig
 from langchain_openai import ChatOpenAI
 
+from agents.loan_approval.src.config import AgentConfig
 from shared.models.loan import LoanRequest
 from shared.monitoring import get_logger
 
@@ -204,6 +204,12 @@ Be strict in your evaluation and ensure all policy requirements are met.
         try:
             response = self.llm.invoke(prompt)
             result_text = response.content
+
+            # Ensure result_text is a string for processing
+            if isinstance(result_text, list):
+                result_text = " ".join(str(item) for item in result_text)
+            else:
+                result_text = str(result_text)
 
             # Parse response (simplified - in production use more robust parsing)
             if "true" in result_text.lower() and '"compliant": true' in result_text:

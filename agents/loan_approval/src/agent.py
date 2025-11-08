@@ -5,11 +5,11 @@ from datetime import datetime, timezone
 from decimal import Decimal
 from typing import Any
 
-from agents.loan_approval.src.config import config
-from agents.loan_approval.src.tools import PolicyChecker, RiskCalculator
 from langchain_openai import ChatOpenAI
 from langgraph.graph import END, StateGraph
 
+from agents.loan_approval.src.config import config
+from agents.loan_approval.src.tools import PolicyChecker, RiskCalculator
 from shared.models.loan import (
     DecisionType,
     LoanDecision,
@@ -22,8 +22,8 @@ from shared.utils import PDFLoader, PermissionChecker, SecurityContext
 logger = get_logger(__name__)
 
 
-class AgentState(dict[str, Any]):
-    """State for the loan approval agent."""
+# Type alias for agent state
+AgentState = dict[str, Any]
 
 
 class LoanApprovalAgent:
@@ -288,7 +288,7 @@ class LoanApprovalAgent:
                 )
 
                 # Execute workflow
-                initial_state: AgentState = {
+                initial_state = {
                     "request": request,
                     "trace_id": trace_id,
                 }

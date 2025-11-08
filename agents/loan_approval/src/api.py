@@ -1,11 +1,11 @@
 """REST API for loan approval agent."""
 
 import uvicorn
-from agents.loan_approval.src.agent import LoanApprovalAgent
-from agents.loan_approval.src.config import config
 from fastapi import FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 
+from agents.loan_approval.src.agent import LoanApprovalAgent
+from agents.loan_approval.src.config import config
 from shared.models.loan import LoanOutcome, LoanRequest
 from shared.monitoring import get_logger, setup_logging
 

@@ -3,11 +3,11 @@
 import logging
 from pathlib import Path
 
-from reportlab.lib.enums import TA_CENTER
-from reportlab.lib.pagesizes import letter
-from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
-from reportlab.lib.units import inch
-from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer
+from reportlab.lib.enums import TA_CENTER  # type: ignore[import-untyped]
+from reportlab.lib.pagesizes import letter  # type: ignore[import-untyped]
+from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet  # type: ignore[import-untyped]
+from reportlab.lib.units import inch  # type: ignore[import-untyped]
+from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer  # type: ignore[import-untyped]
 
 # Get the directory of this script
 SCRIPT_DIR = Path(__file__).parent
@@ -60,11 +60,11 @@ def create_loan_policy_v1() -> None:
 
     content = """
     The maximum allowable debt-to-income (DTI) ratio is 43% for all loan types. This includes:
-    
+
     • All existing debt obligations (mortgages, car loans, credit cards, student loans)
     • The proposed new loan payment
     • Property taxes and insurance (for home loans)
-    
+
     Applicants exceeding this ratio may be approved with:
     • Significant compensating factors (high credit score, substantial assets)
     • Larger down payment (minimum 20% for home loans)
@@ -79,14 +79,14 @@ def create_loan_policy_v1() -> None:
 
     content = """
     All applicants must demonstrate stable income through:
-    
+
     • Minimum 6 months of continuous employment with current employer
     • For self-employed: 2 years of business operation with consistent income
     • Documentation requirements:
       - Recent pay stubs (last 2 months)
       - W-2 forms or tax returns (last 2 years)
       - Bank statements (last 3 months)
-    
+
     Income must be verifiable and sufficient to support the proposed loan payment while maintaining
     the maximum DTI ratio of 43%.
     """
@@ -119,13 +119,13 @@ def create_loan_policy_v1() -> None:
 
     content = """
     Maximum loan-to-value (LTV) ratios by loan type:
-    
+
     • Primary Residence Purchase: 95% LTV (with mortgage insurance)
     • Primary Residence Refinance: 90% LTV
     • Second Home: 85% LTV
     • Investment Property: 80% LTV
     • Auto Loans: 110% of MSRP or current value (whichever is lower)
-    
+
     Higher LTV ratios require:
     • Excellent credit score (750+)
     • Lower DTI ratio (under 35%)
@@ -140,12 +140,12 @@ def create_loan_policy_v1() -> None:
 
     content = """
     Minimum reserve requirements after closing:
-    
+
     • Primary Residence: 2 months of PITI (Principal, Interest, Taxes, Insurance)
     • Second Home: 4 months of PITI
     • Investment Property: 6 months of PITI
     • Business Loans: 6 months of operating expenses
-    
+
     Reserves must be in liquid, readily accessible accounts (checking, savings, money market).
     Retirement accounts may be considered at 60% of value.
     """
@@ -158,11 +158,11 @@ def create_loan_policy_v1() -> None:
 
     content = """
     Interest rates are determined by risk assessment:
-    
+
     • Base Rate: Prime rate + 0.5% for excellent credit (750+, DTI < 30%)
     • Standard Rate: Prime rate + 2-4% for good credit (680-749, DTI 30-40%)
     • High Risk Rate: Prime rate + 4-8% for fair credit (620-679, DTI 40-43%)
-    
+
     Additional rate adjustments:
     • +0.25% for credit scores 620-679
     • +0.50% for LTV > 85%
@@ -215,13 +215,13 @@ def create_best_practices() -> None:
 
     content = """
     The fundamental principle of responsible lending is ensuring the borrower's ability to repay:
-    
+
     • Verify stable income from reliable sources
     • Calculate accurate debt-to-income ratios including all obligations
     • Consider residual income after debt payments
     • Assess employment stability and industry outlook
     • Review asset reserves for cushion against unexpected events
-    
+
     Key Metrics:
     • Front-end DTI (housing expense ratio): Maximum 28%
     • Back-end DTI (total debt ratio): Maximum 36-43%
@@ -236,14 +236,14 @@ def create_best_practices() -> None:
 
     content = """
     Comprehensive credit review beyond the credit score:
-    
+
     • Payment history patterns across all credit types
     • Length of credit history (older is better)
     • Credit mix (variety indicates experience)
     • Recent inquiries (multiple may indicate financial stress)
     • Credit utilization ratio (under 30% is optimal)
     • Public records (judgments, liens, bankruptcies)
-    
+
     Red Flags:
     • Recent late payments without explanation
     • High credit utilization (over 80%)
@@ -260,13 +260,13 @@ def create_best_practices() -> None:
 
     content = """
     For secured loans, proper collateral valuation is essential:
-    
+
     • Use licensed, independent appraisers
     • Require recent comparable sales (last 6 months)
     • Consider market conditions and trends
     • Verify property condition through inspection
     • Review title for liens or encumbrances
-    
+
     Conservative Valuation Approach:
     • Use lower of purchase price or appraised value
     • Apply market condition adjustments
@@ -282,13 +282,13 @@ def create_best_practices() -> None:
 
     content = """
     Implement appropriate risk mitigation measures:
-    
+
     • Require private mortgage insurance for high LTV loans
     • Establish escrow accounts for taxes and insurance
     • Obtain appropriate property and liability insurance
     • Set aside reserves for anticipated expenses
     • Consider loan terms appropriate to borrower situation
-    
+
     Compensating Factors:
     • Excellent credit history can offset higher DTI
     • Substantial reserves mitigate income concerns
@@ -305,7 +305,7 @@ def create_best_practices() -> None:
 
     content = """
     Maintain complete documentation for each loan:
-    
+
     • Completed loan application with signatures
     • Credit reports from all three bureaus
     • Income verification (pay stubs, tax returns, W-2s)
@@ -313,7 +313,7 @@ def create_best_practices() -> None:
     • Employment verification (VOE or verbal verification)
     • Property appraisal and title report
     • All disclosures and borrower acknowledgments
-    
+
     Documentation must be:
     • Current (typically within 90 days)
     • Complete and legible
@@ -329,13 +329,13 @@ def create_best_practices() -> None:
 
     content = """
     Ensure compliance with fair lending regulations:
-    
+
     • Apply consistent underwriting standards to all applicants
     • Base decisions on objective, credit-related factors
     • Avoid discrimination based on protected classes
     • Provide adverse action notices when required
     • Maintain detailed records of decision rationale
-    
+
     Protected Classes:
     • Race, color, national origin
     • Religion

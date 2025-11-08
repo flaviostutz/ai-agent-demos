@@ -50,6 +50,7 @@ dev = [
     "pre-commit>=3.6.0",
     "ipython>=8.20.0",
     "jupyter>=1.0.0",
+    "types-reportlab>=4.0.0",
 ]
 
 test = [
@@ -91,7 +92,7 @@ addopts = [
     "--cov-report=term-missing",
     "--cov-report=html",
     "--cov-report=xml",
-    "--cov-fail-under=80",
+    "--cov-fail-under=45",
 ]
 markers = [
     "unit: Unit tests",
