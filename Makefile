@@ -124,7 +124,7 @@ test-performance: ## Run performance tests
 	uv run pytest -v -m performance
 	@echo "$(GREEN)Performance tests complete!$(NC)"
 
-run: check-uv ## Run the loan approval agent locally
+run: check-uv ## Run the loan approval agent locally (with LLM debug logging enabled)
 	@echo "$(BLUE)Starting loan approval agent locally...$(NC)"
 	@if [ ! -f .env ]; then \
 		echo "$(YELLOW)Warning: .env file not found. Creating from .env.example...$(NC)"; \
@@ -134,14 +134,29 @@ run: check-uv ## Run the loan approval agent locally
 		exit 1; \
 	fi
 	@echo "$(GREEN)Environment loaded from .env$(NC)"
+	@echo "$(GREEN)LLM debug logging enabled for local development$(NC)"
 	@echo "$(YELLOW)API will be available at: http://localhost:8000$(NC)"
 	@echo "$(YELLOW)API docs at: http://localhost:8000/docs$(NC)"
+	@echo "$(YELLOW)MLflow UI: cd agents/loan_approval/src && mlflow ui --port 5000$(NC)"
 	@if [ -z "$$OPENAI_API_KEY" ]; then \
 		export OPENAI_API_KEY=$$(security find-generic-password -s "ai-agent-demos" -a "openai-api-key" -w 2>/dev/null || echo ""); \
 		if [ -n "$$OPENAI_API_KEY" ]; then \
 			echo "$(GREEN)Using OpenAI API key from macOS Keychain$(NC)"; \
 		fi; \
-	fi && cd agents/loan_approval/src && uv run python api.py
+	fi && \
+	export ENABLE_LLM_LOGGING=true && \
+	export LOG_LLM_PROMPTS=true && \
+	export LOG_LLM_RESPONSES=true && \
+	export MLFLOW_LOG_LLM_MODELS=true && \
+	export MLFLOW_LOG_LLM_INPUTS_OUTPUTS=true && \
+	export LOG_LEVEL=DEBUG && \
+	cd agents/loan_approval/src && uv run python api.py
+
+run-mlflow: ## Start MLflow UI to view LLM logs and metrics
+	@echo "$(BLUE)Starting MLflow UI...$(NC)"
+	@echo "$(YELLOW)MLflow UI will be available at: http://localhost:5000$(NC)"
+	@echo "$(YELLOW)Press Ctrl+C to stop$(NC)"
+	@cd agents/loan_approval/src && mlflow ui --port 5000
 
 build: ## Build all agents
 	@echo "$(BLUE)Building all agents...$(NC)"

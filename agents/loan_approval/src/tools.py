@@ -202,6 +202,8 @@ Be strict in your evaluation and ensure all policy requirements are met.
 """
 
         try:
+            # LLM invocation - callbacks configured in the LLM instance will automatically
+            # log prompts, responses, tokens, and timing to MLflow and logs
             response = self.llm.invoke(prompt)
             result_text = response.content
 
@@ -233,8 +235,5 @@ Be strict in your evaluation and ensure all policy requirements are met.
 
         except Exception:
             logger.exception("Error in policy compliance check")
-            # Default to compliant on error to avoid false rejections
-            return {
-                "compliant": True,
-                "notes": "Policy check completed with default approval",
-            }
+            # Re-raise the exception instead of silently returning compliant
+            raise

@@ -1,17 +1,14 @@
 """Loan approval agent implementation with LangGraph."""
 
+import ssl
 import time
 from datetime import datetime, timezone
 from decimal import Decimal
 from typing import Any, TypedDict
 
+import httpx
 from langchain_openai import ChatOpenAI
 from langgraph.graph import END, StateGraph
-
-try:
-    from langchain_core.pydantic_v1 import SecretStr
-except ImportError:
-    from pydantic.v1 import SecretStr
 
 from agents.loan_approval.src.config import config
 from agents.loan_approval.src.tools import PolicyChecker, RiskCalculator
@@ -21,7 +18,12 @@ from shared.models.loan import (
     LoanOutcome,
     LoanRequest,
 )
-from shared.monitoring import MetricsTracker, get_logger
+from shared.monitoring import (
+    MetricsTracker,
+    get_llm_callback_handler,
+    get_logger,
+    setup_mlflow_langchain_autologging,
+)
 from shared.utils import PDFLoader, PermissionChecker, SecurityContext
 
 logger = get_logger(__name__)
@@ -60,6 +62,20 @@ class LoanApprovalAgent:
 
         """
         self.config = config
+
+        # Validate OpenAI API key is provided
+        if (
+            not config.openai_api_key
+            or config.openai_api_key.strip() == ""
+            or config.openai_api_key == "test-key"
+        ):
+            error_msg = (
+                "OpenAI API key is not configured. "
+                "Please set OPENAI_API_KEY environment variable or update the configuration."
+            )
+            logger.error(error_msg)
+            raise ValueError(error_msg)
+
         self.security_context = security_context or PermissionChecker.create_loan_agent_context(
             agent_id="loan-approval-001",
             environment=config.environment,
@@ -68,11 +84,39 @@ class LoanApprovalAgent:
             experiment_name=config.mlflow_experiment_name
         )
 
-        # Initialize LLM
+        # Enable MLflow LangChain autologging if configured
+        if self.config.enable_llm_logging:
+            setup_mlflow_langchain_autologging(
+                log_models=self.config.mlflow_log_llm_models,
+                log_inputs_outputs=self.config.mlflow_log_llm_inputs_outputs,
+            )
+            logger.info("MLflow LangChain autologging enabled")
+
+        # Create LLM callback handler for detailed logging
+        self.llm_callback = None
+        if self.config.enable_llm_logging:
+            self.llm_callback = get_llm_callback_handler(
+                log_prompts=self.config.log_llm_prompts,
+                log_responses=self.config.log_llm_responses,
+            )
+            logger.info("LLM callback handler initialized")
+
+        # Initialize LLM with callbacks
+        callbacks = [self.llm_callback] if self.llm_callback else None
+
+        # Create HTTP client with system SSL certificates for corporate proxies
+        # This uses the system's certificate store which includes corporate CA certs
+        http_client = httpx.Client(
+            verify=ssl.create_default_context(),
+            timeout=60.0,
+        )
+
         self.llm = ChatOpenAI(
             model=config.openai_model,
             temperature=config.openai_temperature,
-            api_key=SecretStr(config.openai_api_key) if config.openai_api_key else None,
+            api_key=config.openai_api_key,
+            callbacks=callbacks,
+            http_client=http_client,
         )
 
         # Load policy documents
@@ -353,26 +397,5 @@ class LoanApprovalAgent:
 
         except Exception:
             logger.exception(f"Error processing loan request {request.request_id}")
-            processing_time_ms = int((time.time() - start_time) * 1000)
-
-            # Return error decision
-            error_decision = LoanDecision(
-                decision=DecisionType.ADDITIONAL_INFO_NEEDED,
-                additional_info_description=(
-                    "Unable to process request due to system error. Please try again later."
-                ),
-                risk_score=None,
-                recommended_amount=None,
-                recommended_term_months=None,
-                interest_rate=None,
-                monthly_payment=None,
-            )
-
-            return LoanOutcome(
-                request_id=request.request_id,
-                decision=error_decision,
-                processing_time_ms=processing_time_ms,
-                model_version=self.config.agent_version,
-                timestamp=datetime.now(tz=timezone.utc),
-                agent_trace_id=trace_id,
-            )
+            # Re-raise the exception to let the API layer handle it with proper HTTP error codes
+            raise

@@ -39,6 +39,13 @@ class AgentConfig(BaseSettings):
     enable_metrics: bool = True
     log_level: str = "INFO"
 
+    # LLM Logging
+    enable_llm_logging: bool = True
+    log_llm_prompts: bool = True  # May contain sensitive data
+    log_llm_responses: bool = True
+    mlflow_log_llm_models: bool = True
+    mlflow_log_llm_inputs_outputs: bool = True
+
     # Policy documents
     policies_directory: str = "./policies"
 
