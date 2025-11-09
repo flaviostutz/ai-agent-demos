@@ -75,31 +75,26 @@ make setup
 source .venv/bin/activate
 ```
 
-3. **Configure API key** (choose one option):
+3. **Configure API key**:
 
-**Option A: Use macOS Keychain (Recommended for security)**
 ```bash
-# Store your OpenAI API key securely in Keychain
+# Option 1: Store in macOS Keychain (Recommended for security)
 make set-openai-key
 # You'll be prompted to enter your key - it will be stored securely
 
 # Copy and configure remaining environment variables
 cp .env.example .env
-nano .env  # Configure other settings (OPENAI_API_KEY not needed)
+nano .env  # Configure other settings (OPENAI_API_KEY not needed if using Keychain)
 ```
 
-**Option B: Use environment file**
 ```bash
-# Copy the example environment file
+# Option 2: Use environment file
 cp .env.example .env
-
-# Edit .env with your configuration (especially OPENAI_API_KEY)
 nano .env
+# Set: OPENAI_API_KEY=sk-your-key-here
 ```
 
-The application will check Keychain first, then fall back to environment variables.
-
-**Tip:** See available keychain commands with `make help` (look for `set-openai-key`, `get-openai-key`, `delete-openai-key`)
+**Note**: The `make run` command will automatically use the Keychain key if `OPENAI_API_KEY` is not set in your environment.
 
 4. **Generate policy documents** (optional):
 ```bash
@@ -355,8 +350,8 @@ pytest -v -s
 ## 🔒 Security
 
 - **Context-based tool permissioning** prevents data leakage
-- **macOS Keychain integration** for secure credential storage (see `make set-openai-key`)
-- **Secrets management** via Keychain or environment variables
+- **macOS Keychain integration** for secure credential storage (use `make set-openai-key`)
+- **Environment-based secrets management** with optional macOS Keychain support
 - **No credentials in code** or version control
 - See [SECURITY.md](SECURITY.md) for detailed security practices
 

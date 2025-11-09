@@ -2,83 +2,16 @@
 
 This guide covers secure credential management for the AI Agents Monorepo.
 
-## macOS Keychain Integration
+## Credential Management
 
 ### Overview
 
-The application integrates with macOS Keychain to securely store sensitive credentials like API keys. This is more secure than storing them in environment files because:
+The application supports two methods for managing sensitive credentials like API keys:
 
-- **Encrypted Storage**: Credentials are stored in the system keychain with encryption
-- **No Plain Text Files**: API keys are not stored in `.env` files that could be accidentally committed
-- **Access Control**: macOS Keychain provides system-level access control
-- **Automatic Retrieval**: The application automatically retrieves credentials when needed
+1. **Environment Variables** (`.env` file) - Primary method
+2. **macOS Keychain** (Optional) - For enhanced local security on macOS
 
-### Quick Start
-
-#### Using Make (Recommended)
-
-```bash
-# Set your OpenAI API key securely
-make set-openai-key
-
-# Verify the key is stored (displays the key)
-make get-openai-key
-
-# Remove the key from keychain
-make delete-openai-key
-```
-
-#### Using the Helper Script Directly
-
-```bash
-# Set a secret
-python3 keychain_helper.py set openai-api-key sk-your-actual-key-here
-
-# Get a secret
-python3 keychain_helper.py get openai-api-key
-
-# Delete a secret
-python3 keychain_helper.py delete openai-api-key
-```
-
-#### Using UV
-
-```bash
-# Set your OpenAI API key securely with UV
-uv run python3 -c "import keyring; import getpass; key = getpass.getpass('Enter OpenAI API key: '); keyring.set_password('ai-agent-demos', 'openai-api-key', key); print('✓ Stored')"
-
-# Or use the helper script with UV
-uv run python3 keychain_helper.py set openai-api-key sk-your-actual-key-here
-```
-
-### How It Works
-
-The application checks for credentials in this priority order:
-
-1. **macOS Keychain** (highest priority) - Retrieved using the `keyring` library
-2. **Environment Variable** - Falls back to `OPENAI_API_KEY` from `.env` file
-3. **Default Value** - Uses test default if neither is available
-
-### Supported Credentials
-
-The keychain can store any credential. Common keys used:
-
-- `openai-api-key` - OpenAI API key for LLM functionality
-- `databricks-token` - Databricks authentication token (for future use)
-
-### Configuration
-
-The keychain service name is: **`ai-agent-demos`**
-
-All secrets are stored under this service name in macOS Keychain. You can view them in the Keychain Access app:
-
-1. Open **Keychain Access** app
-2. Search for `ai-agent-demos`
-3. Double-click to view/manage stored secrets
-
-### Fallback to Environment Files
-
-If you prefer not to use Keychain, you can still use environment files:
+### Environment Variables (Primary Method)
 
 ```bash
 # Copy the example file
@@ -91,6 +24,31 @@ nano .env
 
 **Note**: Environment files should never be committed to version control. The `.env` file is already in `.gitignore`.
 
+### macOS Keychain (Optional, Local Development Only)
+
+For enhanced security on macOS during local development, you can store your API key in the macOS Keychain instead of the `.env` file:
+
+```bash
+# Store your OpenAI API key in macOS Keychain
+security add-generic-password -s "ai-agent-demos" -a "openai-api-key" -w
+# When prompted, enter your API key
+
+# The 'make run' command will automatically fetch it if OPENAI_API_KEY is not set in .env
+
+# To retrieve the key manually:
+security find-generic-password -s "ai-agent-demos" -a "openai-api-key" -w
+
+# To delete the key:
+security delete-generic-password -s "ai-agent-demos" -a "openai-api-key"
+```
+
+**How It Works**: When you run `make run`, if the `OPENAI_API_KEY` environment variable is not set, it will automatically fetch the key from the macOS Keychain and set it as an environment variable at runtime.
+
+### Supported Credentials
+
+- `openai-api-key` - OpenAI API key for LLM functionality
+- Other credentials can be managed similarly
+
 ### CI/CD and Production
 
 For CI/CD pipelines and production deployments:
@@ -102,48 +60,17 @@ For CI/CD pipelines and production deployments:
   - Databricks Secrets
   - Google Secret Manager
 
-The application's keychain integration is primarily for local development on macOS.
+The macOS Keychain integration is designed only for local development convenience.
 
 ### Security Best Practices
 
 1. **Never commit API keys** to version control
-2. **Use Keychain for local development** on macOS
-3. **Rotate keys regularly** for production environments
-4. **Use least privilege** - only grant necessary permissions
-5. **Monitor API usage** to detect unauthorized access
+2. **Use environment variables** for configuration
+3. **Use macOS Keychain (optional)** for additional local security on macOS
+4. **Rotate keys regularly** for production environments
+5. **Use least privilege** - only grant necessary permissions
+6. **Monitor API usage** to detect unauthorized access
 
-### Troubleshooting
+## Context-Based Permissioning
 
-#### "Keyring not found" error
-
-```bash
-# Install keyring with UV
-uv pip install keyring
-
-# Or with pip
-pip install keyring
-```
-
-#### "Permission denied" when accessing keychain
-
-macOS may prompt you to allow access. Click "Allow" when prompted.
-
-#### Clear and reset keychain entry
-
-```bash
-# Delete existing entry
-make delete-openai-key
-
-# Set new value
-make set-openai-key
-```
-
-### Implementation Details
-
-The keychain integration is implemented in:
-
-- **`shared/utils/keychain.py`** - Core keychain utilities
-- **`agents/loan_approval/src/config.py`** - Configuration with keychain support
-- **`keychain_helper.py`** - CLI helper for manual keychain management
-
-For more details, see the source code in these files.
+The application implements context-based tool permissioning to prevent data leakage and ensure proper access control. See `shared/utils/security.py` for implementation details.

@@ -45,8 +45,8 @@ setup: check-uv ## Initial project setup (install UV and dependencies)
 	@echo "$(BLUE)═══════════════════════════════════════════════════════════$(NC)"
 	@echo "$(GREEN)Next steps:$(NC)"
 	@echo "  1. Activate virtual environment: $(YELLOW)source .venv/bin/activate$(NC)"
-	@echo "  2. Set OpenAI API key (recommended): $(YELLOW)make set-openai-key$(NC)"
-	@echo "  3. Or configure .env file: $(YELLOW)cp .env.example .env && nano .env$(NC)"
+	@echo "  2. Configure .env file: $(YELLOW)cp .env.example .env && nano .env$(NC)"
+	@echo "  3. (Optional) Store API key in macOS Keychain: $(YELLOW)security add-generic-password -s 'ai-agent-demos' -a 'openai-api-key' -w$(NC)"
 	@echo "  4. Run the agent: $(YELLOW)make run$(NC)"
 	@echo "$(BLUE)═══════════════════════════════════════════════════════════$(NC)"
 
@@ -57,28 +57,26 @@ install: check-uv ## Install project dependencies with UV
 	fi
 	uv pip install --native-tls -e ".[dev,test,docs]"
 	@echo "$(GREEN)Dependencies installed!$(NC)"
-	@echo "$(YELLOW)Tip: Use 'make set-openai-key' to securely store your OpenAI API key in macOS Keychain$(NC)"
 
 sync: check-uv ## Sync dependencies (ensures exact versions)
 	@echo "$(BLUE)Syncing dependencies with UV...$(NC)"
 	uv pip sync --native-tls
 	@echo "$(GREEN)Dependencies synced!$(NC)"
 
-set-openai-key: check-uv ## Set OpenAI API key in macOS Keychain (secure)
-	@echo "$(BLUE)Setting OpenAI API key in macOS Keychain...$(NC)"
+set-openai-key: ## Store OpenAI API key in macOS Keychain (secure)
+	@echo "$(BLUE)Storing OpenAI API key in macOS Keychain...$(NC)"
 	@echo "$(YELLOW)You will be prompted to enter your OpenAI API key.$(NC)"
-	@echo "$(YELLOW)The key will be stored securely in macOS Keychain.$(NC)"
-	@uv run python3 -c "import keyring; import getpass; key = getpass.getpass('Enter your OpenAI API key: '); keyring.set_password('ai-agent-demos', 'openai-api-key', key); print('\n✓ API key stored securely in macOS Keychain')"
-	@echo "$(GREEN)Done! The application will now retrieve the key from Keychain.$(NC)"
+	@security add-generic-password -s "ai-agent-demos" -a "openai-api-key" -w
+	@echo "$(GREEN)✓ API key stored securely in macOS Keychain$(NC)"
+	@echo "$(YELLOW)The 'make run' command will automatically use it if OPENAI_API_KEY is not set$(NC)"
 
-get-openai-key: check-uv ## Retrieve OpenAI API key from macOS Keychain
+get-openai-key: ## Retrieve OpenAI API key from macOS Keychain
 	@echo "$(BLUE)Retrieving OpenAI API key from macOS Keychain...$(NC)"
-	@uv run python3 ./keychain_helper.py get openai-api-key
+	@security find-generic-password -s "ai-agent-demos" -a "openai-api-key" -w 2>/dev/null || echo "$(RED)No key found in Keychain$(NC)"
 
-delete-openai-key: check-uv ## Delete OpenAI API key from macOS Keychain
+delete-openai-key: ## Delete OpenAI API key from macOS Keychain
 	@echo "$(BLUE)Deleting OpenAI API key from macOS Keychain...$(NC)"
-	@uv run python3 ./keychain_helper.py delete openai-api-key
-	@echo "$(GREEN)Done!$(NC)"
+	@security delete-generic-password -s "ai-agent-demos" -a "openai-api-key" 2>/dev/null && echo "$(GREEN)✓ Key deleted$(NC)" || echo "$(RED)No key found to delete$(NC)"
 
 clean: ## Clean build artifacts and cache files
 	@echo "$(BLUE)Cleaning build artifacts...$(NC)"
@@ -131,17 +129,19 @@ run: check-uv ## Run the loan approval agent locally
 	@if [ ! -f .env ]; then \
 		echo "$(YELLOW)Warning: .env file not found. Creating from .env.example...$(NC)"; \
 		cp .env.example .env; \
-		echo "$(YELLOW)Please configure your API key using one of these methods:$(NC)"; \
-		echo "$(GREEN)  1. (Recommended) Store in Keychain: make set-openai-key$(NC)"; \
-		echo "$(GREEN)  2. (Alternative) Edit .env file with OPENAI_API_KEY$(NC)"; \
+		echo "$(YELLOW)Please configure your OPENAI_API_KEY in .env or store in macOS Keychain$(NC)"; \
 		echo "$(RED)Stopping - please configure API key before running$(NC)"; \
 		exit 1; \
 	fi
 	@echo "$(GREEN)Environment loaded from .env$(NC)"
-	@echo "$(YELLOW)API key will be loaded from Keychain (if available) or .env$(NC)"
 	@echo "$(YELLOW)API will be available at: http://localhost:8000$(NC)"
 	@echo "$(YELLOW)API docs at: http://localhost:8000/docs$(NC)"
-	cd agents/loan_approval/src && uv run python api.py
+	@if [ -z "$$OPENAI_API_KEY" ]; then \
+		export OPENAI_API_KEY=$$(security find-generic-password -s "ai-agent-demos" -a "openai-api-key" -w 2>/dev/null || echo ""); \
+		if [ -n "$$OPENAI_API_KEY" ]; then \
+			echo "$(GREEN)Using OpenAI API key from macOS Keychain$(NC)"; \
+		fi; \
+	fi && cd agents/loan_approval/src && uv run python api.py
 
 build: ## Build all agents
 	@echo "$(BLUE)Building all agents...$(NC)"

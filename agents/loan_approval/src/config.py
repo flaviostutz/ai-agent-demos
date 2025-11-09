@@ -1,9 +1,7 @@
 """Configuration management for loan approval agent."""
 
-from pydantic import Field, field_validator
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
-
-from shared.utils.keychain import get_secret
 
 
 class AgentConfig(BaseSettings):
@@ -22,35 +20,10 @@ class AgentConfig(BaseSettings):
     environment: str = "development"
 
     # LLM settings
-    openai_api_key: str = Field(default="test-key")  # Default for testing
+    openai_api_key: str = Field(default="test-key")  # Loaded from OPENAI_API_KEY env var
     openai_model: str = "gpt-4"
     openai_temperature: float = 0.0
     openai_max_tokens: int = 2000
-
-    @field_validator("openai_api_key", mode="before")
-    @classmethod
-    def load_openai_api_key(cls, v: str | None) -> str:
-        """Load OpenAI API key from keychain with fallback to env var.
-
-        Priority:
-        1. macOS Keychain (key: "openai-api-key")
-        2. Environment variable (OPENAI_API_KEY)
-        3. Default value for testing
-
-        Args:
-            v: The value from environment or default
-
-        Returns:
-            The API key from keychain, env, or default
-
-        """
-        # Try keychain first, then fall back to environment variable
-        secret = get_secret("openai-api-key", fallback_env_var="OPENAI_API_KEY")
-        if secret:
-            return secret
-
-        # If no secret found, use the provided value or default
-        return v or "test-key"
 
     # MLFlow settings
     mlflow_tracking_uri: str | None = None
