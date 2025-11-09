@@ -47,7 +47,7 @@ class AgentConfig(BaseSettings):
     mlflow_log_llm_inputs_outputs: bool = True
 
     # Policy documents
-    policies_directory: str = "./policies"
+    policies_directory: str = "../policies"
 
     # API settings
     # Binding to 0.0.0.0 allows container networking

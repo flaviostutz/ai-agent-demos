@@ -425,19 +425,22 @@ class LoanApprovalAgent:
             # Start a trace for the entire loan processing workflow
             with (
                 self.metrics_tracker.start_run(run_name=f"loan-{request.request_id}"),
-                mlflow.start_trace(  # type: ignore[attr-defined]
+                mlflow.start_span(
                     name="loan_approval_workflow",
                     span_type="CHAIN",
-                    attributes={
+                ) as trace,
+            ):
+                # Set trace attributes
+                trace.set_attributes(
+                    {
                         "request_id": request.request_id,
                         "trace_id": trace_id,
                         "loan_amount": float(request.loan_details.amount),
                         "credit_score": request.credit_history.credit_score,
                         "employment_status": request.employment.status.value,
                         "model_version": self.config.agent_version,
-                    },
-                ) as trace,
-            ):
+                    }
+                )
                 # Log request parameters
                 self.metrics_tracker.log_params(
                     {

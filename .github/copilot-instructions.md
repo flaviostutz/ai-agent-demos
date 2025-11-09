@@ -1,7 +1,8 @@
 # Copilot Instructions
 
+## Tooling
+  - Always use commands from makefiles when available
+  - All python tooling is done via "uv"
+
 ## Quality checks
-  - Always perform lint on the code you generate and fix any issues
-  - Ensure that the code you generate passes all existing tests
-  - Run build to check if the build also works fine
-  - You can run "make all" to run all of these checks at once
+  - Run "make all" everytime you make changes to ensure lint, test and build is working fine. Fix any issues.
