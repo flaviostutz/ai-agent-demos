@@ -19,11 +19,23 @@ class AgentConfig(BaseSettings):
     agent_version: str = "0.1.0"
     environment: str = "development"
 
-    # LLM settings
+    # LLM settings - supports both OpenAI and Azure OpenAI
+    # For OpenAI: set openai_api_key and openai_model
+    # For Azure: set azure_openai_api_key, azure_openai_endpoint,
+    #            azure_openai_deployment, azure_openai_api_version
+    use_azure_openai: bool = False  # Set to True to use Azure OpenAI instead of OpenAI
+
+    # OpenAI settings
     openai_api_key: str = Field(default="test-key")  # Loaded from OPENAI_API_KEY env var
     openai_model: str = "gpt-4"
     openai_temperature: float = 0.0
     openai_max_tokens: int = 2000
+
+    # Azure OpenAI settings
+    azure_openai_api_key: str | None = None  # Loaded from AZURE_OPENAI_API_KEY env var
+    azure_openai_endpoint: str | None = None  # e.g., https://your-resource.openai.azure.com/
+    azure_openai_deployment: str | None = None  # Your deployment name
+    azure_openai_api_version: str = "2024-02-01"  # Azure OpenAI API version
 
     # MLFlow settings
     mlflow_tracking_uri: str | None = None

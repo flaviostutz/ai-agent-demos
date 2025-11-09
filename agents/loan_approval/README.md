@@ -78,7 +78,24 @@ make undeploy
 
 Configure via environment variables:
 
-- `OPENAI_API_KEY`: OpenAI API key for LLM
+### LLM Provider Options
+
+The agent supports both **OpenAI** and **Azure OpenAI** services:
+
+**OpenAI (default):**
+- `OPENAI_API_KEY`: OpenAI API key
+- `OPENAI_MODEL`: Model name (e.g., gpt-4)
+- `OPENAI_TEMPERATURE`: Temperature setting (default: 0.0)
+
+**Azure OpenAI:**
+- `USE_AZURE_OPENAI`: Set to `true` to use Azure OpenAI instead of OpenAI
+- `AZURE_OPENAI_API_KEY`: Azure OpenAI API key
+- `AZURE_OPENAI_ENDPOINT`: Azure OpenAI endpoint URL (e.g., https://your-resource.openai.azure.com/)
+- `AZURE_OPENAI_DEPLOYMENT`: Your deployment name
+- `AZURE_OPENAI_API_VERSION`: API version (default: 2024-02-01)
+
+### Other Configuration
+
 - `MLFLOW_TRACKING_URI`: MLFlow tracking server URI
 - `DATABRICKS_HOST`: Databricks workspace URL
 - `DATABRICKS_TOKEN`: Databricks access token

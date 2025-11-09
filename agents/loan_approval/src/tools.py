@@ -3,7 +3,7 @@
 from datetime import date, datetime, timezone
 from typing import Any
 
-from langchain_openai import ChatOpenAI
+from langchain_openai import AzureChatOpenAI, ChatOpenAI
 
 from agents.loan_approval.src.config import AgentConfig
 from shared.models.loan import LoanRequest
@@ -144,11 +144,11 @@ class RiskCalculator:
 class PolicyChecker:
     """Check loan applications against policy documents."""
 
-    def __init__(self, llm: ChatOpenAI, policy_content: str) -> None:
+    def __init__(self, llm: ChatOpenAI | AzureChatOpenAI, policy_content: str) -> None:
         """Initialize policy checker.
 
         Args:
-            llm: Language model for policy analysis
+            llm: Language model for policy analysis (supports OpenAI or Azure OpenAI)
             policy_content: Loaded policy document content
 
         """

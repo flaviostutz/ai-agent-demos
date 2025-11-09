@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any, TypedDict
 
 import httpx
 import mlflow
-from langchain_openai import ChatOpenAI
+from langchain_openai import AzureChatOpenAI, ChatOpenAI
 from langgraph.graph import END, StateGraph
 from pydantic import SecretStr
 
@@ -68,12 +68,36 @@ class LoanApprovalAgent:
         """
         self.config = config
 
-        # Validate OpenAI API key is provided
-        if (
+        # Validate LLM configuration
+        if config.use_azure_openai:
+            # Validate Azure OpenAI configuration
+            if not config.azure_openai_api_key or config.azure_openai_api_key.strip() == "":
+                error_msg = (
+                    "Azure OpenAI API key is not configured. "
+                    "Please set AZURE_OPENAI_API_KEY environment variable."
+                )
+                logger.error(error_msg)
+                raise ValueError(error_msg)
+            if not config.azure_openai_endpoint or config.azure_openai_endpoint.strip() == "":
+                error_msg = (
+                    "Azure OpenAI endpoint is not configured. "
+                    "Please set AZURE_OPENAI_ENDPOINT environment variable."
+                )
+                logger.error(error_msg)
+                raise ValueError(error_msg)
+            if not config.azure_openai_deployment or config.azure_openai_deployment.strip() == "":
+                error_msg = (
+                    "Azure OpenAI deployment is not configured. "
+                    "Please set AZURE_OPENAI_DEPLOYMENT environment variable."
+                )
+                logger.error(error_msg)
+                raise ValueError(error_msg)
+        elif (
             not config.openai_api_key
             or config.openai_api_key.strip() == ""
             or config.openai_api_key == "test-key"
         ):
+            # Validate OpenAI API key is provided
             error_msg = (
                 "OpenAI API key is not configured. "
                 "Please set OPENAI_API_KEY environment variable or update the configuration."
@@ -118,13 +142,27 @@ class LoanApprovalAgent:
             timeout=60.0,
         )
 
-        self.llm = ChatOpenAI(
-            model=config.openai_model,
-            temperature=config.openai_temperature,
-            api_key=SecretStr(config.openai_api_key),
-            callbacks=callbacks,
-            http_client=http_client,
-        )
+        # Initialize LLM based on configuration (OpenAI or Azure OpenAI)
+        if config.use_azure_openai:
+            self.llm: ChatOpenAI | AzureChatOpenAI = AzureChatOpenAI(
+                azure_deployment=config.azure_openai_deployment,
+                azure_endpoint=config.azure_openai_endpoint,
+                api_key=SecretStr(config.azure_openai_api_key or ""),
+                api_version=config.azure_openai_api_version,
+                temperature=config.openai_temperature,
+                callbacks=callbacks,
+                http_client=http_client,
+            )
+            logger.info(f"Using Azure OpenAI with deployment: {config.azure_openai_deployment}")
+        else:
+            self.llm = ChatOpenAI(
+                model=config.openai_model,
+                temperature=config.openai_temperature,
+                api_key=SecretStr(config.openai_api_key),
+                callbacks=callbacks,
+                http_client=http_client,
+            )
+            logger.info(f"Using OpenAI with model: {config.openai_model}")
 
         # Load policy documents
         self.policy_content = self._load_policies()
