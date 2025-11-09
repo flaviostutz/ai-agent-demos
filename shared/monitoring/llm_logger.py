@@ -15,7 +15,7 @@ logger = get_logger(__name__)
 class LLMCallbackHandler(BaseCallbackHandler):
     """Custom callback handler to log all LLM interactions with detailed context."""
 
-    def __init__(self, log_prompts: bool = True, log_responses: bool = True) -> None:
+    def __init__(self, *, log_prompts: bool = True, log_responses: bool = True) -> None:
         """Initialize LLM callback handler.
 
         Args:
@@ -27,10 +27,13 @@ class LLMCallbackHandler(BaseCallbackHandler):
         self.log_prompts = log_prompts
         self.log_responses = log_responses
         self.call_count = 0
-        self.start_time = None
+        self.start_time: float | None = None
 
     def on_llm_start(
-        self, serialized: dict[str, Any], prompts: list[str], **kwargs: Any
+        self,
+        serialized: dict[str, Any],
+        prompts: list[str],
+        **kwargs: Any,  # noqa: ARG002
     ) -> None:
         """Log when LLM starts generating.
 
@@ -66,7 +69,7 @@ class LLMCallbackHandler(BaseCallbackHandler):
         except Exception as e:
             logger.warning(f"Failed to log model to MLflow: {e}")
 
-    def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
+    def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:  # noqa: ARG002
         """Log when LLM finishes generating.
 
         Args:
@@ -76,16 +79,12 @@ class LLMCallbackHandler(BaseCallbackHandler):
         """
         if self.start_time:
             elapsed_time = time.time() - self.start_time
-            logger.info(
-                f"LLM call #{self.call_count} completed in {elapsed_time:.3f}s"
-            )
+            logger.info(f"LLM call #{self.call_count} completed in {elapsed_time:.3f}s")
 
             # Log timing metric
             try:
                 if mlflow.active_run():
-                    mlflow.log_metric(
-                        f"llm_call_{self.call_count}_latency_sec", elapsed_time
-                    )
+                    mlflow.log_metric(f"llm_call_{self.call_count}_latency_sec", elapsed_time)
             except Exception as e:
                 logger.warning(f"Failed to log latency to MLflow: {e}")
 
@@ -102,14 +101,17 @@ class LLMCallbackHandler(BaseCallbackHandler):
                     f"Prompt: {prompt_tokens}, Completion: {completion_tokens}"
                 )
 
-                # Log token metrics
                 try:
                     if mlflow.active_run():
-                        mlflow.log_metrics({
-                            f"llm_call_{self.call_count}_total_tokens": float(total_tokens),
-                            f"llm_call_{self.call_count}_prompt_tokens": float(prompt_tokens),
-                            f"llm_call_{self.call_count}_completion_tokens": float(completion_tokens),
-                        })
+                        mlflow.log_metrics(
+                            {
+                                f"llm_call_{self.call_count}_total_tokens": float(total_tokens),
+                                f"llm_call_{self.call_count}_prompt_tokens": float(prompt_tokens),
+                                f"llm_call_{self.call_count}_completion_tokens": float(
+                                    completion_tokens
+                                ),
+                            }
+                        )
                 except Exception as e:
                     logger.warning(f"Failed to log tokens to MLflow: {e}")
 
@@ -125,12 +127,13 @@ class LLMCallbackHandler(BaseCallbackHandler):
                         if mlflow.active_run():
                             mlflow.log_text(
                                 response_text,
-                                f"responses/llm_call_{self.call_count}_response_{i + 1}_{j + 1}.txt",
+                                f"responses/llm_call_{self.call_count}_"
+                                f"response_{i + 1}_{j + 1}.txt",
                             )
                     except Exception as e:
                         logger.warning(f"Failed to log response to MLflow: {e}")
 
-    def on_llm_error(self, error: Exception | KeyboardInterrupt, **kwargs: Any) -> None:
+    def on_llm_error(self, error: BaseException, **kwargs: Any) -> None:  # noqa: ARG002
         """Log when LLM encounters an error.
 
         Args:
@@ -149,6 +152,7 @@ class LLMCallbackHandler(BaseCallbackHandler):
 
 
 def setup_mlflow_langchain_autologging(
+    *,
     log_models: bool = True,
     log_input_examples: bool = True,
     log_model_signatures: bool = True,
@@ -183,7 +187,7 @@ def setup_mlflow_langchain_autologging(
 
 
 def get_llm_callback_handler(
-    log_prompts: bool = True, log_responses: bool = True
+    *, log_prompts: bool = True, log_responses: bool = True
 ) -> LLMCallbackHandler:
     """Get an LLM callback handler instance.
 

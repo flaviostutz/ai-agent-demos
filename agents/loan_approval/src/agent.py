@@ -4,11 +4,15 @@ import ssl
 import time
 from datetime import datetime, timezone
 from decimal import Decimal
-from typing import Any, TypedDict
+from typing import TYPE_CHECKING, Any, TypedDict
 
 import httpx
 from langchain_openai import ChatOpenAI
 from langgraph.graph import END, StateGraph
+from pydantic import SecretStr
+
+if TYPE_CHECKING:
+    from langchain_core.callbacks import BaseCallbackHandler
 
 from agents.loan_approval.src.config import config
 from agents.loan_approval.src.tools import PolicyChecker, RiskCalculator
@@ -102,7 +106,9 @@ class LoanApprovalAgent:
             logger.info("LLM callback handler initialized")
 
         # Initialize LLM with callbacks
-        callbacks = [self.llm_callback] if self.llm_callback else None
+        callbacks: list[BaseCallbackHandler] | None = (
+            [self.llm_callback] if self.llm_callback else None
+        )
 
         # Create HTTP client with system SSL certificates for corporate proxies
         # This uses the system's certificate store which includes corporate CA certs
@@ -114,7 +120,7 @@ class LoanApprovalAgent:
         self.llm = ChatOpenAI(
             model=config.openai_model,
             temperature=config.openai_temperature,
-            api_key=config.openai_api_key,
+            api_key=SecretStr(config.openai_api_key),
             callbacks=callbacks,
             http_client=http_client,
         )
