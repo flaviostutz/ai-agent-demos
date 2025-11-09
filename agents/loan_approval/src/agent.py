@@ -7,6 +7,7 @@ from decimal import Decimal
 from typing import TYPE_CHECKING, Any, TypedDict
 
 import httpx
+import mlflow
 from langchain_openai import ChatOpenAI
 from langgraph.graph import END, StateGraph
 from pydantic import SecretStr
@@ -179,57 +180,91 @@ class LoanApprovalAgent:
 
     def _validate_input(self, state: AgentState) -> AgentState:
         """Validate input data."""
-        logger.info("Validating input data")
-        state["request"]
+        with mlflow.start_span(name="validate_input") as span:
+            logger.info("Validating input data")
+            request = state["request"]
 
-        # Security check
-        self.security_context.require_all_permissions(*list(self.security_context.permissions))
+            # Log span attributes
+            span.set_attributes(
+                {
+                    "request_id": request.request_id,
+                    "loan_amount": float(request.loan_details.amount),
+                    "credit_score": request.credit_history.credit_score,
+                }
+            )
 
-        state["validation_passed"] = True
-        state["validation_errors"] = []
-        return state
+            # Security check
+            self.security_context.require_all_permissions(*list(self.security_context.permissions))
+
+            state["validation_passed"] = True
+            state["validation_errors"] = []
+
+            span.set_attribute("validation_passed", value=True)
+            return state
 
     def _check_basic_eligibility(self, state: AgentState) -> AgentState:
         """Check basic eligibility criteria."""
-        logger.info("Checking basic eligibility")
-        request: LoanRequest = state["request"]
+        with mlflow.start_span(name="check_basic_eligibility") as span:
+            logger.info("Checking basic eligibility")
+            request: LoanRequest = state["request"]
 
-        # Credit score check
-        if request.credit_history.credit_score < self.config.min_credit_score:
-            state["eligible"] = False
-            state["rejection_reason"] = (
-                f"Credit score {request.credit_history.credit_score} is below "
-                f"minimum requirement of {self.config.min_credit_score}"
+            span.set_attributes(
+                {
+                    "credit_score": request.credit_history.credit_score,
+                    "min_credit_score": self.config.min_credit_score,
+                }
             )
-            return state
 
-        # DTI ratio calculation
-        monthly_income = float(request.employment.monthly_income)
-        monthly_debt = float(request.financial.monthly_debt_payments)
-        dti_ratio = monthly_debt / monthly_income if monthly_income > 0 else 1.0
-
-        if dti_ratio > self.config.max_dti_ratio:
-            state["eligible"] = False
-            state["rejection_reason"] = (
-                f"Debt-to-income ratio {dti_ratio:.2%} exceeds "
-                f"maximum allowed {self.config.max_dti_ratio:.2%}"
-            )
-            return state
-
-        # Employment check
-        if request.employment.years_employed:
-            months_employed = float(request.employment.years_employed) * 12
-            if months_employed < self.config.min_employment_months:
-                state["need_additional_info"] = True
-                state["additional_info_description"] = (
-                    "Employment history is less than 6 months. "
-                    "Please provide additional employment verification documents."
+            # Credit score check
+            if request.credit_history.credit_score < self.config.min_credit_score:
+                state["eligible"] = False
+                state["rejection_reason"] = (
+                    f"Credit score {request.credit_history.credit_score} is below "
+                    f"minimum requirement of {self.config.min_credit_score}"
                 )
+                span.set_attribute("eligible", value=False)
+                span.set_attribute("rejection_reason", value=state["rejection_reason"])
                 return state
 
-        state["eligible"] = True
-        state["dti_ratio"] = dti_ratio
-        return state
+            # DTI ratio calculation
+            monthly_income = float(request.employment.monthly_income)
+            monthly_debt = float(request.financial.monthly_debt_payments)
+            dti_ratio = monthly_debt / monthly_income if monthly_income > 0 else 1.0
+
+            span.set_attributes(
+                {
+                    "dti_ratio": dti_ratio,
+                    "max_dti_ratio": self.config.max_dti_ratio,
+                }
+            )
+
+            if dti_ratio > self.config.max_dti_ratio:
+                state["eligible"] = False
+                state["rejection_reason"] = (
+                    f"Debt-to-income ratio {dti_ratio:.2%} exceeds "
+                    f"maximum allowed {self.config.max_dti_ratio:.2%}"
+                )
+                span.set_attribute("eligible", value=False)
+                span.set_attribute("rejection_reason", value=state["rejection_reason"])
+                return state
+
+            # Employment check
+            if request.employment.years_employed:
+                months_employed = float(request.employment.years_employed) * 12
+                if months_employed < self.config.min_employment_months:
+                    state["need_additional_info"] = True
+                    state["additional_info_description"] = (
+                        "Employment history is less than 6 months. "
+                        "Please provide additional employment verification documents."
+                    )
+                    span.set_attribute("need_additional_info", value=True)
+                    return state
+
+            state["eligible"] = True
+            state["dti_ratio"] = dti_ratio
+            span.set_attribute("eligible", value=True)
+            span.set_attribute("dti_ratio", value=dti_ratio)
+            return state
 
     def _route_after_eligibility(self, state: AgentState) -> str:
         """Route workflow after eligibility check."""
@@ -241,93 +276,127 @@ class LoanApprovalAgent:
 
     def _calculate_risk(self, state: AgentState) -> AgentState:
         """Calculate risk score."""
-        logger.info("Calculating risk score")
-        request: LoanRequest = state["request"]
+        with mlflow.start_span(name="calculate_risk") as span:
+            logger.info("Calculating risk score")
+            request: LoanRequest = state["request"]
 
-        risk_score = self.risk_calculator.calculate_risk_score(request, state.get("dti_ratio", 0.0))
+            risk_score = self.risk_calculator.calculate_risk_score(
+                request, state.get("dti_ratio", 0.0)
+            )
 
-        state["risk_score"] = risk_score
-        logger.info(f"Risk score calculated: {risk_score}")
-        return state
+            state["risk_score"] = risk_score
+            span.set_attribute("risk_score", value=risk_score)
+            logger.info(f"Risk score calculated: {risk_score}")
+            return state
 
     def _check_policies(self, state: AgentState) -> AgentState:
         """Check against policy documents."""
-        logger.info("Checking policy compliance")
-        request: LoanRequest = state["request"]
+        with mlflow.start_span(name="check_policies") as span:
+            logger.info("Checking policy compliance")
+            request: LoanRequest = state["request"]
 
-        policy_check_result = self.policy_checker.check_compliance(
-            request, state.get("risk_score", 50)
-        )
-
-        state["policy_compliant"] = policy_check_result["compliant"]
-        state["policy_notes"] = policy_check_result.get("notes", "")
-
-        if not policy_check_result["compliant"]:
-            state["rejection_reason"] = policy_check_result.get(
-                "reason", "Policy compliance check failed"
+            policy_check_result = self.policy_checker.check_compliance(
+                request, state.get("risk_score", 50)
             )
 
-        return state
+            state["policy_compliant"] = policy_check_result["compliant"]
+            state["policy_notes"] = policy_check_result.get("notes", "")
+
+            span.set_attributes(
+                {
+                    "policy_compliant": policy_check_result["compliant"],
+                    "policy_notes": policy_check_result.get("notes", ""),
+                }
+            )
+
+            if not policy_check_result["compliant"]:
+                state["rejection_reason"] = policy_check_result.get(
+                    "reason", "Policy compliance check failed"
+                )
+                span.set_attribute("rejection_reason", value=state["rejection_reason"])
+
+            return state
 
     def _make_decision(self, state: AgentState) -> AgentState:
         """Make final loan decision."""
-        logger.info("Making final decision")
+        with mlflow.start_span(name="make_decision") as span:
+            logger.info("Making final decision")
 
-        # Check for rejection
-        if state.get("rejection_reason"):
-            decision = LoanDecision(
-                decision=DecisionType.DISAPPROVED,
-                risk_score=None,
-                disapproval_reason=state["rejection_reason"],
-                recommended_amount=None,
-                recommended_term_months=None,
-                interest_rate=None,
-                monthly_payment=None,
+            # Check for rejection
+            if state.get("rejection_reason"):
+                decision = LoanDecision(
+                    decision=DecisionType.DISAPPROVED,
+                    risk_score=None,
+                    disapproval_reason=state["rejection_reason"],
+                    recommended_amount=None,
+                    recommended_term_months=None,
+                    interest_rate=None,
+                    monthly_payment=None,
+                )
+                state["decision"] = decision
+                span.set_attributes(
+                    {
+                        "decision": DecisionType.DISAPPROVED.value,
+                        "rejection_reason": state["rejection_reason"],
+                    }
+                )
+                return state
+
+            # Check for additional info needed
+            if state.get("need_additional_info"):
+                decision = LoanDecision(
+                    decision=DecisionType.ADDITIONAL_INFO_NEEDED,
+                    additional_info_description=state["additional_info_description"],
+                    risk_score=None,
+                    recommended_amount=None,
+                    recommended_term_months=None,
+                    interest_rate=None,
+                    monthly_payment=None,
+                )
+                state["decision"] = decision
+                span.set_attributes(
+                    {
+                        "decision": DecisionType.ADDITIONAL_INFO_NEEDED.value,
+                        "additional_info_description": state["additional_info_description"],
+                    }
+                )
+                return state
+
+            # Approved
+            request: LoanRequest = state["request"]
+            risk_score = state.get("risk_score", 50)
+
+            # Calculate interest rate based on risk
+            interest_rate = self._calculate_interest_rate(risk_score)
+
+            # Calculate monthly payment
+            loan_amount = float(request.loan_details.amount)
+            term_months = request.loan_details.term_months
+            monthly_rate = float(interest_rate) / 100 / 12
+            monthly_payment = (loan_amount * monthly_rate * (1 + monthly_rate) ** term_months) / (
+                (1 + monthly_rate) ** term_months - 1
             )
-            state["decision"] = decision
-            return state
 
-        # Check for additional info needed
-        if state.get("need_additional_info"):
             decision = LoanDecision(
-                decision=DecisionType.ADDITIONAL_INFO_NEEDED,
-                additional_info_description=state["additional_info_description"],
-                risk_score=None,
-                recommended_amount=None,
-                recommended_term_months=None,
-                interest_rate=None,
-                monthly_payment=None,
+                decision=DecisionType.APPROVED,
+                risk_score=risk_score,
+                interest_rate=Decimal(str(interest_rate)),
+                monthly_payment=Decimal(str(round(monthly_payment, 2))),
+                recommended_amount=request.loan_details.amount,
+                recommended_term_months=term_months,
             )
+
             state["decision"] = decision
+            span.set_attributes(
+                {
+                    "decision": DecisionType.APPROVED.value,
+                    "risk_score": risk_score,
+                    "interest_rate": interest_rate,
+                    "monthly_payment": float(monthly_payment),
+                }
+            )
+            logger.info(f"Loan approved with risk score {risk_score}")
             return state
-
-        # Approved
-        request: LoanRequest = state["request"]
-        risk_score = state.get("risk_score", 50)
-
-        # Calculate interest rate based on risk
-        interest_rate = self._calculate_interest_rate(risk_score)
-
-        # Calculate monthly payment
-        loan_amount = float(request.loan_details.amount)
-        term_months = request.loan_details.term_months
-        monthly_rate = float(interest_rate) / 100 / 12
-        monthly_payment = (loan_amount * monthly_rate * (1 + monthly_rate) ** term_months) / (
-            (1 + monthly_rate) ** term_months - 1
-        )
-
-        decision = LoanDecision(
-            decision=DecisionType.APPROVED,
-            risk_score=risk_score,
-            interest_rate=Decimal(str(interest_rate)),
-            monthly_payment=Decimal(str(round(monthly_payment, 2))),
-            recommended_amount=request.loan_details.amount,
-            recommended_term_months=term_months,
-        )
-
-        state["decision"] = decision
-        logger.info(f"Loan approved with risk score {risk_score}")
-        return state
 
     def _calculate_interest_rate(self, risk_score: int) -> float:
         """Calculate interest rate based on risk score."""
@@ -353,7 +422,22 @@ class LoanApprovalAgent:
         logger.info(f"Processing loan request {request.request_id}")
 
         try:
-            with self.metrics_tracker.start_run(run_name=f"loan-{request.request_id}"):
+            # Start a trace for the entire loan processing workflow
+            with (
+                self.metrics_tracker.start_run(run_name=f"loan-{request.request_id}"),
+                mlflow.start_trace(  # type: ignore[attr-defined]
+                    name="loan_approval_workflow",
+                    span_type="CHAIN",
+                    attributes={
+                        "request_id": request.request_id,
+                        "trace_id": trace_id,
+                        "loan_amount": float(request.loan_details.amount),
+                        "credit_score": request.credit_history.credit_score,
+                        "employment_status": request.employment.status.value,
+                        "model_version": self.config.agent_version,
+                    },
+                ) as trace,
+            ):
                 # Log request parameters
                 self.metrics_tracker.log_params(
                     {
@@ -385,6 +469,15 @@ class LoanApprovalAgent:
                 )
 
                 self.metrics_tracker.set_tag("decision", decision.decision.value)
+
+                # Set trace outputs
+                trace.set_outputs(
+                    {
+                        "decision": decision.decision.value,
+                        "risk_score": decision.risk_score,
+                        "processing_time_ms": processing_time_ms,
+                    }
+                )
 
                 # Create outcome
                 outcome = LoanOutcome(
