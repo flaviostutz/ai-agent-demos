@@ -1,0 +1,50 @@
+{
+  "request_id": "approved-001",
+  "applicant": {
+    "first_name": "Sarah",
+    "last_name": "Johnson",
+    "date_of_birth": "1985-03-15",
+    "ssn": "123-45-6789",
+    "email": "sarah.johnson@example.com",
+    "phone": "+15551234567",
+    "address": "456 Oak Avenue",
+    "city": "Seattle",
+    "state": "WA",
+    "zip_code": "98101"
+  },
+  "employment": {
+    "status": "employed",
+    "employer_name": "Tech Solutions Inc",
+    "job_title": "Senior Software Engineer",
+    "years_employed": 5.5,
+    "monthly_income": 12000,
+    "additional_income": 1000
+  },
+  "financial": {
+    "monthly_debt_payments": 2000,
+    "checking_balance": 15000,
+    "savings_balance": 50000,
+    "investment_balance": 75000,
+    "has_bankruptcy": false,
+    "bankruptcy_date": null,
+    "has_foreclosure": false,
+    "foreclosure_date": null
+  },
+  "credit_history": {
+    "credit_score": 780,
+    "number_of_credit_cards": 4,
+    "total_credit_limit": 60000,
+    "credit_utilization": 15.5,
+    "number_of_late_payments_12m": 0,
+    "number_of_late_payments_24m": 0,
+    "number_of_inquiries_6m": 1,
+    "oldest_credit_line_years": 12.5
+  },
+  "loan_details": {
+    "amount": 400000,
+    "purpose": "home_purchase",
+    "term_months": 360,
+    "property_value": 500000,
+    "down_payment": 100000
+  }
+}

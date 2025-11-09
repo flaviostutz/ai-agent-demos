@@ -348,9 +348,16 @@ class LoanApprovalAgent:
             )
 
             if not policy_check_result["compliant"]:
-                state["rejection_reason"] = policy_check_result.get(
-                    "reason", "Policy compliance check failed"
-                )
+                # Build detailed rejection reason with LLM explanation
+                base_reason = policy_check_result.get("reason", "Policy compliance check failed")
+                notes = policy_check_result.get("notes", "")
+
+                # Combine reason and notes for complete context
+                if notes and notes != base_reason:
+                    state["rejection_reason"] = f"{base_reason}. Details: {notes}"
+                else:
+                    state["rejection_reason"] = base_reason
+
                 span.set_attribute("rejection_reason", value=state["rejection_reason"])
 
             return state

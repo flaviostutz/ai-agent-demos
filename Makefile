@@ -46,7 +46,9 @@ setup: check-uv ## Initial project setup (install UV and dependencies)
 	@echo "$(GREEN)Next steps:$(NC)"
 	@echo "  1. Activate virtual environment: $(YELLOW)source .venv/bin/activate$(NC)"
 	@echo "  2. Configure .env file: $(YELLOW)cp .env.example .env && nano .env$(NC)"
-	@echo "  3. (Optional) Store API key in macOS Keychain: $(YELLOW)security add-generic-password -s 'ai-agent-demos' -a 'openai-api-key' -w$(NC)"
+	@echo "  3. Store API key in macOS Keychain (choose one):"
+	@echo "     OpenAI: $(YELLOW)make set-openai-key$(NC)"
+	@echo "     Azure OpenAI: $(YELLOW)make set-azure-openai-key$(NC)"
 	@echo "  4. Run the agent: $(YELLOW)make run$(NC)"
 	@echo "$(BLUE)═══════════════════════════════════════════════════════════$(NC)"
 
@@ -70,13 +72,28 @@ set-openai-key: ## Store OpenAI API key in macOS Keychain (secure)
 	@echo "$(GREEN)✓ API key stored securely in macOS Keychain$(NC)"
 	@echo "$(YELLOW)The 'make run' command will automatically use it if OPENAI_API_KEY is not set$(NC)"
 
+set-azure-openai-key: ## Store Azure OpenAI API key in macOS Keychain (secure)
+	@echo "$(BLUE)Storing Azure OpenAI API key in macOS Keychain...$(NC)"
+	@echo "$(YELLOW)You will be prompted to enter your Azure OpenAI API key.$(NC)"
+	@security add-generic-password -s "ai-agent-demos" -a "azure-openai-api-key" -w
+	@echo "$(GREEN)✓ Azure OpenAI API key stored securely in macOS Keychain$(NC)"
+	@echo "$(YELLOW)The 'make run' command will automatically use it if AZURE_OPENAI_API_KEY is not set$(NC)"
+
 get-openai-key: ## Retrieve OpenAI API key from macOS Keychain
 	@echo "$(BLUE)Retrieving OpenAI API key from macOS Keychain...$(NC)"
 	@security find-generic-password -s "ai-agent-demos" -a "openai-api-key" -w 2>/dev/null || echo "$(RED)No key found in Keychain$(NC)"
 
+get-azure-openai-key: ## Retrieve Azure OpenAI API key from macOS Keychain
+	@echo "$(BLUE)Retrieving Azure OpenAI API key from macOS Keychain...$(NC)"
+	@security find-generic-password -s "ai-agent-demos" -a "azure-openai-api-key" -w 2>/dev/null || echo "$(RED)No key found in Keychain$(NC)"
+
 delete-openai-key: ## Delete OpenAI API key from macOS Keychain
 	@echo "$(BLUE)Deleting OpenAI API key from macOS Keychain...$(NC)"
 	@security delete-generic-password -s "ai-agent-demos" -a "openai-api-key" 2>/dev/null && echo "$(GREEN)✓ Key deleted$(NC)" || echo "$(RED)No key found to delete$(NC)"
+
+delete-azure-openai-key: ## Delete Azure OpenAI API key from macOS Keychain
+	@echo "$(BLUE)Deleting Azure OpenAI API key from macOS Keychain...$(NC)"
+	@security delete-generic-password -s "ai-agent-demos" -a "azure-openai-api-key" 2>/dev/null && echo "$(GREEN)✓ Key deleted$(NC)" || echo "$(RED)No key found to delete$(NC)"
 
 clean: ## Clean build artifacts and cache files
 	@echo "$(BLUE)Cleaning build artifacts...$(NC)"
@@ -129,7 +146,7 @@ run: check-uv ## Run the loan approval agent locally (with LLM debug logging ena
 	@if [ ! -f .env ]; then \
 		echo "$(YELLOW)Warning: .env file not found. Creating from .env.example...$(NC)"; \
 		cp .env.example .env; \
-		echo "$(YELLOW)Please configure your OPENAI_API_KEY in .env or store in macOS Keychain$(NC)"; \
+		echo "$(YELLOW)Please configure your API key in .env or store in macOS Keychain$(NC)"; \
 		echo "$(RED)Stopping - please configure API key before running$(NC)"; \
 		exit 1; \
 	fi
@@ -144,12 +161,12 @@ run: check-uv ## Run the loan approval agent locally (with LLM debug logging ena
 			echo "$(GREEN)Using OpenAI API key from macOS Keychain$(NC)"; \
 		fi; \
 	fi && \
-	export ENABLE_LLM_LOGGING=true && \
-	export LOG_LLM_PROMPTS=true && \
-	export LOG_LLM_RESPONSES=true && \
-	export MLFLOW_LOG_LLM_MODELS=true && \
-	export MLFLOW_LOG_LLM_INPUTS_OUTPUTS=true && \
-	export LOG_LEVEL=DEBUG && \
+	if [ -z "$$AZURE_OPENAI_API_KEY" ]; then \
+		export AZURE_OPENAI_API_KEY=$$(security find-generic-password -s "ai-agent-demos" -a "azure-openai-api-key" -w 2>/dev/null || echo ""); \
+		if [ -n "$$AZURE_OPENAI_API_KEY" ]; then \
+			echo "$(GREEN)Using Azure OpenAI API key from macOS Keychain$(NC)"; \
+		fi; \
+	fi && \
 	cd agents/loan_approval/src && uv run python api.py
 
 run-mlflow: ## Start MLflow UI to view LLM logs and metrics
