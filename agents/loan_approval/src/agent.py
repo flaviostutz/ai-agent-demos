@@ -176,6 +176,48 @@ class LoanApprovalAgent:
 
         logger.info(f"Loan approval agent initialized (version {config.agent_version})")
 
+    def health_check(self) -> dict[str, Any]:
+        """Perform health check including LLM connectivity test.
+
+        Returns:
+            Dictionary with health check results
+
+        """
+        health_status: dict[str, Any] = {
+            "agent_initialized": True,
+            "llm_configured": False,
+            "llm_responsive": False,
+            "policies_loaded": bool(self.policy_content),
+            "workflow_ready": self.workflow is not None,
+            "error": None,
+        }
+
+        try:
+            # Test LLM connectivity with a simple query
+            logger.info("Performing LLM health check...")
+            start_time = time.time()
+
+            # Simple test query to verify LLM is responsive
+            test_response = self.llm.invoke("Say 'OK' if you are operational.")
+
+            elapsed_time = time.time() - start_time
+
+            # Check if we got a valid response
+            if test_response and hasattr(test_response, "content"):
+                health_status["llm_configured"] = True
+                health_status["llm_responsive"] = True
+                health_status["llm_response_time_ms"] = round(elapsed_time * 1000, 2)
+                logger.info(f"LLM health check passed in {elapsed_time:.2f}s")
+            else:
+                health_status["error"] = "LLM returned invalid response"
+                logger.warning("LLM health check: invalid response format")
+
+        except Exception as e:
+            health_status["error"] = f"LLM health check failed: {e!s}"
+            logger.exception("LLM health check failed")
+
+        return health_status
+
     def _load_policies(self) -> str:
         """Load policy documents from PDFs."""
         try:

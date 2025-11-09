@@ -31,19 +31,28 @@ app.add_middleware(
 
 # Initialize agent
 agent: LoanApprovalAgent | None = None
+agent_health_status: dict = {}
 
 
 @app.on_event("startup")
 async def startup_event() -> None:
     """Initialize agent on startup."""
-    global agent  # noqa: PLW0603
+    global agent, agent_health_status  # noqa: PLW0603
     logger.info("Starting Loan Approval Agent API")
-    try:
-        agent = LoanApprovalAgent()
-        logger.info("Agent initialized successfully")
-    except Exception:
-        logger.exception("Failed to initialize agent")
-        raise
+
+    agent = LoanApprovalAgent()
+    logger.info("Agent initialized successfully")
+
+    # Perform health check with LLM
+    logger.info("Performing startup health check...")
+    agent_health_status = agent.health_check()
+
+    if not agent_health_status.get("llm_responsive", False):
+        error_msg = agent_health_status.get("error", "LLM not responsive")
+        logger.error(f"Startup health check failed: {error_msg}")
+        raise RuntimeError(f"LLM health check failed: {error_msg}")
+
+    logger.info("Startup health check passed - system fully operational")
 
 
 @app.on_event("shutdown")
@@ -64,10 +73,37 @@ async def root() -> dict:
 
 @app.get("/health")
 async def health() -> dict:
-    """Health check endpoint."""
+    """Health check endpoint.
+
+    Returns:
+        Dictionary with comprehensive health status including LLM connectivity
+
+    """
+    if agent is None:
+        return {
+            "status": "unhealthy",
+            "agent_initialized": False,
+            "error": "Agent not initialized",
+        }
+
+    # Get latest health status
+    current_health = agent_health_status.copy() if agent_health_status else {}
+
+    # Determine overall status
+    is_healthy = (
+        current_health.get("llm_responsive", False)
+        and current_health.get("workflow_ready", False)
+        and current_health.get("policies_loaded", False)
+    )
+
     return {
-        "status": "healthy",
+        "status": "healthy" if is_healthy else "unhealthy",
         "agent_initialized": agent is not None,
+        "llm_responsive": current_health.get("llm_responsive", False),
+        "llm_response_time_ms": current_health.get("llm_response_time_ms"),
+        "policies_loaded": current_health.get("policies_loaded", False),
+        "workflow_ready": current_health.get("workflow_ready", False),
+        "error": current_health.get("error"),
     }
 
 

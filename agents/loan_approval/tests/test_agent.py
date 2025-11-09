@@ -2,10 +2,12 @@
 
 from datetime import date
 from decimal import Decimal
+from unittest.mock import MagicMock, patch
 
 import pytest
 from pydantic import ValidationError
 
+from agents.loan_approval.src.agent import LoanApprovalAgent
 from agents.loan_approval.src.config import AgentConfig
 from agents.loan_approval.src.tools import RiskCalculator
 from shared.models.loan import (
@@ -255,3 +257,132 @@ class TestDataModels:
         reconstructed = LoanRequest.model_validate_json(json_data)
         assert reconstructed.request_id == sample_loan_request.request_id
         assert reconstructed.applicant.first_name == sample_loan_request.applicant.first_name
+
+
+@pytest.mark.unit
+class TestAgentHealthCheck:
+    """Tests for agent health check functionality."""
+
+    @patch("agents.loan_approval.src.agent.config")
+    @patch("agents.loan_approval.src.agent.ChatOpenAI")
+    @patch("agents.loan_approval.src.agent.PDFLoader")
+    def test_health_check_success(
+        self,
+        mock_pdf_loader: MagicMock,
+        mock_chat_openai: MagicMock,
+        mock_config: MagicMock,
+    ) -> None:
+        """Test health check with successful LLM response."""
+        # Configure mock config
+        mock_config.use_azure_openai = False
+        mock_config.openai_api_key = "test-key-123"
+        mock_config.openai_model = "gpt-4"
+        mock_config.openai_temperature = 0.0
+        mock_config.policies_directory = "./policies"
+        mock_config.mlflow_experiment_name = "test"
+        mock_config.enable_llm_logging = False
+        mock_config.agent_version = "0.1.0"
+        mock_config.environment = "test"
+
+        # Mock policy loading
+        mock_pdf_loader.load_directory.return_value = "mock policy content"
+
+        # Create mock LLM
+        mock_llm = MagicMock()
+        mock_response = MagicMock()
+        mock_response.content = "OK"
+        mock_llm.invoke.return_value = mock_response
+        mock_chat_openai.return_value = mock_llm
+
+        # Create agent
+        agent = LoanApprovalAgent()
+
+        # Perform health check
+        health_status = agent.health_check()
+
+        # Verify health status
+        assert health_status["agent_initialized"] is True
+        assert health_status["llm_responsive"] is True
+        assert health_status["llm_configured"] is True
+        assert health_status["workflow_ready"] is True
+        assert "llm_response_time_ms" in health_status
+        assert health_status["error"] is None
+
+    @patch("agents.loan_approval.src.agent.config")
+    @patch("agents.loan_approval.src.agent.ChatOpenAI")
+    @patch("agents.loan_approval.src.agent.PDFLoader")
+    def test_health_check_llm_failure(
+        self,
+        mock_pdf_loader: MagicMock,
+        mock_chat_openai: MagicMock,
+        mock_config: MagicMock,
+    ) -> None:
+        """Test health check with LLM failure."""
+        # Configure mock config
+        mock_config.use_azure_openai = False
+        mock_config.openai_api_key = "test-key-123"
+        mock_config.openai_model = "gpt-4"
+        mock_config.openai_temperature = 0.0
+        mock_config.policies_directory = "./policies"
+        mock_config.mlflow_experiment_name = "test"
+        mock_config.enable_llm_logging = False
+        mock_config.agent_version = "0.1.0"
+        mock_config.environment = "test"
+
+        # Mock policy loading
+        mock_pdf_loader.load_directory.return_value = "mock policy content"
+
+        # Create mock LLM that raises an exception
+        mock_llm = MagicMock()
+        mock_llm.invoke.side_effect = Exception("LLM connection failed")
+        mock_chat_openai.return_value = mock_llm
+
+        # Create agent
+        agent = LoanApprovalAgent()
+
+        # Perform health check
+        health_status = agent.health_check()
+
+        # Verify health status shows error
+        assert health_status["agent_initialized"] is True
+        assert health_status["llm_responsive"] is False
+        assert "LLM health check failed" in health_status["error"]
+
+    @patch("agents.loan_approval.src.agent.config")
+    @patch("agents.loan_approval.src.agent.ChatOpenAI")
+    @patch("agents.loan_approval.src.agent.PDFLoader")
+    def test_health_check_invalid_response(
+        self,
+        mock_pdf_loader: MagicMock,
+        mock_chat_openai: MagicMock,
+        mock_config: MagicMock,
+    ) -> None:
+        """Test health check with invalid LLM response."""
+        # Configure mock config
+        mock_config.use_azure_openai = False
+        mock_config.openai_api_key = "test-key-123"
+        mock_config.openai_model = "gpt-4"
+        mock_config.openai_temperature = 0.0
+        mock_config.policies_directory = "./policies"
+        mock_config.mlflow_experiment_name = "test"
+        mock_config.enable_llm_logging = False
+        mock_config.agent_version = "0.1.0"
+        mock_config.environment = "test"
+
+        # Mock policy loading
+        mock_pdf_loader.load_directory.return_value = "mock policy content"
+
+        # Create mock LLM with invalid response
+        mock_llm = MagicMock()
+        mock_llm.invoke.return_value = None
+        mock_chat_openai.return_value = mock_llm
+
+        # Create agent
+        agent = LoanApprovalAgent()
+
+        # Perform health check
+        health_status = agent.health_check()
+
+        # Verify health status shows error
+        assert health_status["llm_responsive"] is False
+        assert "LLM returned invalid response" in health_status["error"]
