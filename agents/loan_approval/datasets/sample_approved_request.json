@@ -18,13 +18,24 @@
     "job_title": "Senior Software Engineer",
     "years_employed": 5.5,
     "monthly_income": 12000,
-    "additional_income": 1000
+    "additional_income": 1000,
+    "industry": "Technology",
+    "industry_outlook": "Stable with strong growth prospects"
   },
   "financial": {
     "monthly_debt_payments": 2000,
+    "monthly_debt_breakdown": {
+      "mortgage": 0,
+      "auto_loan": 500,
+      "credit_cards": 300,
+      "student_loans": 800,
+      "other_debts": 400
+    },
     "checking_balance": 15000,
     "savings_balance": 50000,
     "investment_balance": 75000,
+    "retirement_balance": 120000,
+    "asset_reserves_months": 8.5,
     "has_bankruptcy": false,
     "bankruptcy_date": null,
     "has_foreclosure": false,
@@ -38,13 +49,48 @@
     "number_of_late_payments_12m": 0,
     "number_of_late_payments_24m": 0,
     "number_of_inquiries_6m": 1,
-    "oldest_credit_line_years": 12.5
+    "oldest_credit_line_years": 12.5,
+    "payment_history": "Excellent - no missed payments in 24 months",
+    "credit_mix": "Diverse - includes credit cards, auto loan, and student loans",
+    "public_records": "None - no judgments, liens, or bankruptcies",
+    "recent_inquiries": "1 inquiry in last 6 months for auto loan"
   },
   "loan_details": {
     "amount": 400000,
     "purpose": "home_purchase",
     "term_months": 360,
     "property_value": 500000,
-    "down_payment": 100000
+    "down_payment": 100000,
+    "loan_to_value": 80.0,
+    "front_end_dti": 23.5,
+    "back_end_dti": 35.2
+  },
+  "property": {
+    "address": "789 Pine Street",
+    "city": "Seattle",
+    "state": "WA",
+    "zip_code": "98102",
+    "property_type": "Single Family",
+    "appraised_value": 500000,
+    "appraisal_date": "2024-09-15",
+    "comparable_sales": "Recent sales in area range $480k-$520k",
+    "property_condition": "Excellent - well maintained, no major defects",
+    "inspection_completed": true,
+    "title_review": "Clear title - no liens or encumbrances"
+  },
+  "documentation": {
+    "application_signed": true,
+    "pay_stubs_verified": true,
+    "pay_stubs_months": 2,
+    "tax_returns_verified": true,
+    "tax_returns_years": 2,
+    "w2_forms_verified": true,
+    "w2_years": 2,
+    "bank_statements_verified": true,
+    "bank_statements_months": 3,
+    "employment_verification": "Completed via phone verification on 2024-09-20",
+    "credit_reports": "Obtained from all three bureaus - Experian, Equifax, TransUnion",
+    "appraisal_report": "Completed by licensed appraiser",
+    "title_report": "Clear title confirmed"
   }
 }

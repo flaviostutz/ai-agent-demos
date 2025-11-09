@@ -351,12 +351,19 @@ class LoanApprovalAgent:
                 # Build detailed rejection reason with LLM explanation
                 base_reason = policy_check_result.get("reason", "Policy compliance check failed")
                 notes = policy_check_result.get("notes", "")
+                missing_info = policy_check_result.get("missing_information", [])
 
-                # Combine reason and notes for complete context
+                # Build comprehensive rejection message
+                rejection_parts = [base_reason]
+
                 if notes and notes != base_reason:
-                    state["rejection_reason"] = f"{base_reason}. Details: {notes}"
-                else:
-                    state["rejection_reason"] = base_reason
+                    rejection_parts.append(f"Details: {notes}")
+
+                if missing_info:
+                    missing_str = ", ".join(missing_info)
+                    rejection_parts.append(f"Missing information: {missing_str}")
+
+                state["rejection_reason"] = ". ".join(rejection_parts)
 
                 span.set_attribute("rejection_reason", value=state["rejection_reason"])
 

@@ -73,6 +73,8 @@ class EmploymentInfo(BaseModel):
     years_employed: Decimal | None = Field(None, ge=0, le=60)
     monthly_income: Decimal = Field(..., gt=0, le=1000000)
     additional_income: Decimal | None = Field(default=Decimal(0), ge=0, le=1000000)
+    industry: str | None = Field(None, max_length=200)
+    industry_outlook: str | None = Field(None, max_length=500)
 
     @model_validator(mode="after")
     def validate_employment_details(self) -> "EmploymentInfo":
@@ -88,9 +90,12 @@ class FinancialInfo(BaseModel):
     """Financial information."""
 
     monthly_debt_payments: Decimal = Field(default=Decimal(0), ge=0, le=1000000)
+    monthly_debt_breakdown: dict[str, float] | None = None
     checking_balance: Decimal | None = Field(None, ge=0)
     savings_balance: Decimal | None = Field(None, ge=0)
     investment_balance: Decimal | None = Field(None, ge=0)
+    retirement_balance: Decimal | None = Field(None, ge=0)
+    asset_reserves_months: Decimal | None = Field(None, ge=0)
     has_bankruptcy: bool = Field(default=False)
     bankruptcy_date: date | None = None
     has_foreclosure: bool = Field(default=False)
@@ -117,6 +122,10 @@ class CreditHistory(BaseModel):
     number_of_late_payments_24m: int = Field(default=0, ge=0)
     number_of_inquiries_6m: int = Field(default=0, ge=0)
     oldest_credit_line_years: Decimal | None = Field(None, ge=0, le=80)
+    payment_history: str | None = Field(None, max_length=500)
+    credit_mix: str | None = Field(None, max_length=500)
+    public_records: str | None = Field(None, max_length=500)
+    recent_inquiries: str | None = Field(None, max_length=500)
 
 
 class LoanDetails(BaseModel):
@@ -127,6 +136,9 @@ class LoanDetails(BaseModel):
     term_months: int = Field(..., gt=0, le=360)
     property_value: Decimal | None = Field(None, gt=0)
     down_payment: Decimal | None = Field(default=Decimal(0), ge=0)
+    loan_to_value: Decimal | None = Field(None, ge=0, le=100)
+    front_end_dti: Decimal | None = Field(None, ge=0, le=100)
+    back_end_dti: Decimal | None = Field(None, ge=0, le=100)
 
     @model_validator(mode="after")
     def validate_loan_values(self) -> "LoanDetails":
@@ -140,6 +152,40 @@ class LoanDetails(BaseModel):
         return self
 
 
+class PropertyInfo(BaseModel):
+    """Property information for home loans."""
+
+    address: str | None = Field(None, max_length=200)
+    city: str | None = Field(None, max_length=100)
+    state: str | None = Field(None, max_length=2)
+    zip_code: str | None = Field(None, pattern=r"^\d{5}(-\d{4})?$")
+    property_type: str | None = Field(None, max_length=100)
+    appraised_value: Decimal | None = Field(None, ge=0)
+    appraisal_date: str | None = None
+    comparable_sales: str | None = Field(None, max_length=500)
+    property_condition: str | None = Field(None, max_length=500)
+    inspection_completed: bool | None = None
+    title_review: str | None = Field(None, max_length=500)
+
+
+class DocumentationInfo(BaseModel):
+    """Documentation verification information."""
+
+    application_signed: bool | None = None
+    pay_stubs_verified: bool | None = None
+    pay_stubs_months: int | None = Field(None, ge=0, le=24)
+    tax_returns_verified: bool | None = None
+    tax_returns_years: int | None = Field(None, ge=0, le=10)
+    w2_forms_verified: bool | None = None
+    w2_years: int | None = Field(None, ge=0, le=10)
+    bank_statements_verified: bool | None = None
+    bank_statements_months: int | None = Field(None, ge=0, le=24)
+    employment_verification: str | None = Field(None, max_length=500)
+    credit_reports: str | None = Field(None, max_length=500)
+    appraisal_report: str | None = Field(None, max_length=500)
+    title_report: str | None = Field(None, max_length=500)
+
+
 class LoanRequest(BaseModel):
     """Complete loan application request."""
 
@@ -149,6 +195,8 @@ class LoanRequest(BaseModel):
     financial: FinancialInfo
     credit_history: CreditHistory
     loan_details: LoanDetails
+    property: PropertyInfo | None = None
+    documentation: DocumentationInfo | None = None
     timestamp: datetime = Field(default_factory=datetime.utcnow)
 
     model_config = ConfigDict(

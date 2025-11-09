@@ -1,5 +1,6 @@
 """Tools and utilities for loan approval agent."""
 
+import json
 from datetime import date, datetime, timezone
 from typing import Any
 
@@ -155,6 +156,44 @@ class PolicyChecker:
         self.llm = llm
         self.policy_content = policy_content
 
+    def _format_property_info(self, property_info: Any) -> str:
+        """Format property information for display."""
+        if not property_info:
+            return "Not provided"
+
+        return f"""- Address: {property_info.address or "Not provided"}
+- Property Type: {property_info.property_type or "Not provided"}
+- Appraised Value: ${property_info.appraised_value or 0:,.2f}
+- Appraisal Date: {property_info.appraisal_date or "Not provided"}
+- Comparable Sales: {property_info.comparable_sales or "Not provided"}
+- Property Condition: {property_info.property_condition or "Not provided"}
+- Inspection Completed: {property_info.inspection_completed or "Not provided"}
+- Title Review: {property_info.title_review or "Not provided"}"""
+
+    def _format_documentation_info(self, doc_info: Any) -> str:
+        """Format documentation information for display."""
+        if not doc_info:
+            return "Not provided"
+
+        pay_stubs = f"{doc_info.pay_stubs_verified or 'Not provided'}"
+        pay_stubs += f" ({doc_info.pay_stubs_months or 0} months)"
+        tax_returns = f"{doc_info.tax_returns_verified or 'Not provided'}"
+        tax_returns += f" ({doc_info.tax_returns_years or 0} years)"
+        w2_forms = f"{doc_info.w2_forms_verified or 'Not provided'}"
+        w2_forms += f" ({doc_info.w2_years or 0} years)"
+        bank_stmts = f"{doc_info.bank_statements_verified or 'Not provided'}"
+        bank_stmts += f" ({doc_info.bank_statements_months or 0} months)"
+
+        return f"""- Application Signed: {doc_info.application_signed or "Not provided"}
+- Pay Stubs Verified: {pay_stubs}
+- Tax Returns Verified: {tax_returns}
+- W-2 Forms Verified: {w2_forms}
+- Bank Statements Verified: {bank_stmts}
+- Employment Verification: {doc_info.employment_verification or "Not provided"}
+- Credit Reports: {doc_info.credit_reports or "Not provided"}
+- Appraisal Report: {doc_info.appraisal_report or "Not provided"}
+- Title Report: {doc_info.title_report or "Not provided"}"""
+
     def check_compliance(self, request: LoanRequest, risk_score: int) -> dict[str, Any]:
         """Check loan request compliance with policies.
 
@@ -168,18 +207,53 @@ class PolicyChecker:
         """
         logger.info("Checking policy compliance with LLM")
 
-        # Prepare loan summary for LLM
+        # Calculate total assets
+        total_assets = (
+            (request.financial.checking_balance or 0)
+            + (request.financial.savings_balance or 0)
+            + (request.financial.investment_balance or 0)
+        )
+
+        # Format as readable text
         loan_summary = f"""
 Loan Application Summary:
+
+LOAN DETAILS:
 - Amount: ${request.loan_details.amount:,.2f}
 - Purpose: {request.loan_details.purpose.value}
 - Term: {request.loan_details.term_months} months
+- Property Value: ${request.loan_details.property_value or 0:,.2f}
+- Down Payment: ${request.loan_details.down_payment or 0:,.2f}
+- LTV Ratio: {request.loan_details.loan_to_value or "Not provided"}%
+- Front-end DTI: {request.loan_details.front_end_dti or "Not provided"}%
+- Back-end DTI: {request.loan_details.back_end_dti or "Not provided"}%
+
+CREDIT HISTORY:
 - Credit Score: {request.credit_history.credit_score}
 - Risk Score: {risk_score}
-- Employment Status: {request.employment.status.value}
+- Credit Utilization: {request.credit_history.credit_utilization}%
+- Payment History: {request.credit_history.payment_history or "Not provided"}
+- Credit Mix: {request.credit_history.credit_mix or "Not provided"}
+- Public Records: {request.credit_history.public_records or "Not provided"}
+
+EMPLOYMENT:
+- Status: {request.employment.status.value}
+- Years Employed: {request.employment.years_employed or "N/A"}
+- Industry: {request.employment.industry or "Not provided"}
+- Industry Outlook: {request.employment.industry_outlook or "Not provided"}
 - Monthly Income: ${request.employment.monthly_income:,.2f}
-- Has Bankruptcy: {request.financial.has_bankruptcy}
-- Has Foreclosure: {request.financial.has_foreclosure}
+
+FINANCIAL:
+- Monthly Debt Payments: ${request.financial.monthly_debt_payments:,.2f}
+- Debt Breakdown: {request.financial.monthly_debt_breakdown or "Not provided"}
+- Asset Reserves (months): {request.financial.asset_reserves_months or "Not calculated"}
+- Total Assets: ${total_assets:,.2f}
+
+PROPERTY INFORMATION:
+{self._format_property_info(request.property)}
+
+DOCUMENTATION:
+{self._format_documentation_info(request.documentation)}
 """
 
         prompt = f"""You are a loan policy compliance expert. Review the following loan \
@@ -194,11 +268,15 @@ LOAN APPLICATION:
 Analyze this application and respond in the following JSON format:
 {{
     "compliant": true/false,
-    "notes": "Brief explanation of the decision",
-    "reason": "Specific reason if not compliant (empty if compliant)"
+    "notes": "Detailed explanation of the decision (be thorough and complete)",
+    "reason": "Specific reason if not compliant (empty if compliant)",
+    "missing_information": ["list of any required information missing from the application"]
 }}
 
 Be strict in your evaluation and ensure all policy requirements are met.
+If the application is missing required information, list all missing fields in \
+the missing_information array.
+Provide complete and detailed notes - do not truncate your explanation.
 """
 
         try:
@@ -213,24 +291,69 @@ Be strict in your evaluation and ensure all policy requirements are met.
             else:
                 result_text = str(result_text)
 
-            # Parse response (simplified - in production use more robust parsing)
+            logger.info(f"Policy check response: {result_text}")
+
+            # Parse response - try JSON first, fallback to text parsing
+            try:
+                # Try to extract JSON from response (it might be wrapped in markdown)
+                json_start = result_text.find("{")
+                json_end = result_text.rfind("}") + 1
+                if json_start >= 0 and json_end > json_start:
+                    json_str = result_text[json_start:json_end]
+                    parsed = json.loads(json_str)
+
+                    if parsed.get("compliant", False):
+                        return {
+                            "compliant": True,
+                            "notes": parsed.get("notes", "Application complies with all policies"),
+                        }
+                    # Not compliant - return detailed information
+                    return {
+                        "compliant": False,
+                        "reason": parsed.get("reason", "Policy compliance check failed"),
+                        "notes": parsed.get("notes", result_text),
+                        "missing_information": parsed.get("missing_information", []),
+                    }
+            except (json.JSONDecodeError, ValueError):
+                # Fallback to text parsing
+                logger.warning("Could not parse JSON response, using text parsing")
+
+            # Fallback text parsing
             if "true" in result_text.lower() and '"compliant": true' in result_text:
                 return {
                     "compliant": True,
                     "notes": "Application complies with all policies",
                 }
+
             # Extract reason from response
             reason = "Policy compliance check failed"
-            if "reason" in result_text.lower():
-                # Simple extraction - in production use JSON parsing
-                parts = result_text.split('"reason"')
-                if len(parts) > 1:
-                    parts[1].split('"')[1] if '"' in parts[1] else reason
+            missing_info = []
+
+            if '"reason"' in result_text:
+                try:
+                    parts = result_text.split('"reason"')[1].split('"')
+                    if len(parts) > 1:
+                        reason = parts[1]
+                except IndexError:
+                    pass
+
+            if '"missing_information"' in result_text:
+                try:
+                    # Extract the array portion
+                    parts_str = result_text.split('"missing_information"')[1]
+                    array_start = parts_str.find("[")
+                    array_end = parts_str.find("]") + 1
+                    if array_start >= 0 and array_end > array_start:
+                        array_str = parts_str[array_start:array_end]
+                        missing_info = json.loads(array_str)
+                except (IndexError, json.JSONDecodeError):
+                    pass
 
             return {
                 "compliant": False,
                 "reason": reason,
-                "notes": result_text[:200],
+                "notes": result_text,  # Return full text, not truncated
+                "missing_information": missing_info,
             }
 
         except Exception:
