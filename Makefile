@@ -138,7 +138,7 @@ test-integration: ## Run integration tests
 
 test-performance: ## Run performance tests
 	@echo "$(BLUE)Running performance tests...$(NC)"
-	uv run pytest -v -m performance
+	uv run pytest -v -m performance --no-cov
 	@echo "$(GREEN)Performance tests complete!$(NC)"
 
 run: check-uv ## Run the loan approval agent locally (with LLM debug logging enabled)
