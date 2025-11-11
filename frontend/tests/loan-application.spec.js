@@ -21,6 +21,7 @@ test.describe('Loan Application Form', () => {
   test('should have all action buttons', async ({ page }) => {
     await expect(page.locator('button', { hasText: 'Submit Application' })).toBeVisible();
     await expect(page.locator('button', { hasText: 'Generate Random Data' })).toBeVisible();
+    await expect(page.locator('button', { hasText: 'Generate Approved Request' })).toBeVisible();
     await expect(page.locator('button', { hasText: 'Reset Form' })).toBeVisible();
   });
 
@@ -53,6 +54,124 @@ test.describe('Loan Application Form', () => {
     expect(ssn).toMatch(/^\d{3}-\d{2}-\d{4}$/);
     expect(parseInt(creditScore)).toBeGreaterThan(0);
     expect(parseInt(loanAmount)).toBeGreaterThan(0);
+  });
+
+  test('should generate approved request data when clicking Generate Approved Request button', async ({ page }) => {
+    // Click the Generate Approved Request button
+    await page.locator('button', { hasText: 'Generate Approved Request' }).click();
+    
+    // Wait a bit for the form to be populated
+    await page.waitForTimeout(500);
+    
+    // Verify that all key fields are populated with approval-worthy data
+    const firstName = await page.locator('input[name="first_name"]').inputValue();
+    const lastName = await page.locator('input[name="last_name"]').inputValue();
+    const email = await page.locator('input[name="email"]').inputValue();
+    const ssn = await page.locator('input[name="ssn"]').inputValue();
+    const creditScore = await page.locator('input[name="credit_score"]').inputValue();
+    const loanAmount = await page.locator('input[name="loan_amount"]').inputValue();
+    const monthlyIncome = await page.locator('input[name="monthly_income"]').inputValue();
+    const savingsBalance = await page.locator('input[name="savings_balance"]').inputValue();
+    const employmentStatus = await page.locator('select[name="employment_status"]').inputValue();
+    
+    // Verify fields are populated
+    expect(firstName).not.toBe('');
+    expect(lastName).not.toBe('');
+    expect(email).toContain('@example.com');
+    expect(ssn).toMatch(/^\d{3}-\d{2}-\d{4}$/);
+    
+    // Verify approval-worthy values
+    expect(parseInt(creditScore)).toBeGreaterThan(700); // Good credit score
+    expect(parseInt(loanAmount)).toBeGreaterThan(0);
+    expect(parseInt(monthlyIncome)).toBeGreaterThan(5000); // Good income
+    expect(parseInt(savingsBalance)).toBeGreaterThan(10000); // Good savings
+    expect(employmentStatus).toBe('employed'); // Should be employed
+  });
+
+  test('should submit generated approved request with supporting documentation (mock API)', async ({ page }) => {
+    let capturedPayload;
+
+    await page.route('**/api/v1/loan/evaluate', async route => {
+      capturedPayload = route.request().postDataJSON();
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          request_id: 'TEST-APPROVED',
+          decision: {
+            decision: 'approved',
+            risk_score: 12,
+            disapproval_reason: null,
+            additional_info_description: null,
+            recommended_amount: '400000',
+            recommended_term_months: 360,
+            interest_rate: '4.5',
+            monthly_payment: '2026.74'
+          },
+          processing_time_ms: 850
+        })
+      });
+    });
+
+    await page.locator('button', { hasText: 'Generate Approved Request' }).click();
+    await page.waitForTimeout(200);
+    await page.locator('button', { hasText: 'Submit Application' }).click();
+
+    await page.waitForSelector('.result', { timeout: 5000 });
+
+    expect(capturedPayload).toBeDefined();
+    expect(capturedPayload.financial.monthly_debt_breakdown).toBeTruthy();
+    expect(capturedPayload.financial.monthly_debt_breakdown.auto_loan).toBe(500);
+    expect(capturedPayload.property).toBeTruthy();
+    expect(capturedPayload.property.address).toBe('789 Pine Street');
+    expect(capturedPayload.documentation).toBeTruthy();
+    expect(capturedPayload.documentation.application_signed).toBe(true);
+    expect(capturedPayload.documentation.pay_stubs_months).toBe(2);
+    expect(capturedPayload.documentation.tax_returns_verified).toBe(true);
+  });
+
+  test('should generate approved request and submit successfully to real API', async ({ page }) => {
+    // Check if API is running
+    const apiHealthCheck = await page.request.get('http://localhost:8000/health').catch(() => null);
+    if (!apiHealthCheck || !apiHealthCheck.ok()) {
+      throw new Error('Backend API is not running. Please start the API server on port 8000 before running this test.');
+    }
+
+    // Click the Generate Approved Request button
+    await page.locator('button', { hasText: 'Generate Approved Request' }).click();
+    
+    // Wait for form to be populated
+    await page.waitForTimeout(500);
+    
+    // Submit the form
+    await page.locator('button', { hasText: 'Submit Application' }).click();
+    
+    // Wait for result to appear (real API might take longer)
+    await page.waitForSelector('.result', { timeout: 30000 });
+    
+    // Verify result is displayed
+    await expect(page.locator('.result')).toBeVisible();
+    
+    const resultElement = page.locator('.result');
+    const resultText = await resultElement.textContent();
+    const heading = await resultElement.locator('h3').textContent();
+    
+    // Verify we got a valid response
+    expect(resultText).toContain('Request ID');
+    expect(resultText).toContain('Decision');
+    expect(resultText).toContain('Processing Time');
+    
+    // The request uses approval-optimized data, but actual decision is up to the AI agent
+    // We verify we get one of the valid decision types
+    const hasValidDecision = 
+      heading.includes('Application Approved') || 
+      heading.includes('Application Disapproved') || 
+      heading.includes('Additional Information Needed');
+    expect(hasValidDecision).toBeTruthy();
+    
+    // Note: This test generates high-quality loan application data designed to maximize
+    // approval chances, but the final decision is made by the AI agent based on its
+    // evaluation logic. The test verifies the form works correctly, not the approval rate.
   });
 
   test('should validate SSN format', async ({ page }) => {

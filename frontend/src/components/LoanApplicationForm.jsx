@@ -66,6 +66,41 @@ const LoanApplicationForm = () => {
     loan_to_value: '',
     front_end_dti: '',
     back_end_dti: '',
+
+    // Property (populated by helpers)
+    property_address: '',
+    property_city: '',
+    property_state: '',
+    property_zip_code: '',
+    property_type: '',
+    property_appraised_value: '',
+    property_appraisal_date: '',
+    property_comparable_sales: '',
+    property_condition: '',
+    property_inspection_completed: false,
+    property_title_review: '',
+
+    // Documentation (populated by helpers)
+    documentation_application_signed: false,
+    documentation_pay_stubs_verified: false,
+    documentation_pay_stubs_months: '',
+    documentation_tax_returns_verified: false,
+    documentation_tax_returns_years: '',
+    documentation_w2_forms_verified: false,
+    documentation_w2_years: '',
+    documentation_bank_statements_verified: false,
+    documentation_bank_statements_months: '',
+    documentation_employment_verification: '',
+    documentation_credit_reports: '',
+    documentation_appraisal_report: '',
+    documentation_title_report: '',
+
+    // Debt breakdown (stored as strings for parsing on submit)
+    debt_breakdown_mortgage: '',
+    debt_breakdown_auto_loan: '',
+    debt_breakdown_credit_cards: '',
+    debt_breakdown_student_loans: '',
+    debt_breakdown_other_debts: '',
   });
 
   const handleChange = (e) => {
@@ -142,6 +177,45 @@ const LoanApplicationForm = () => {
 
     try {
       // Transform form data to API format
+      const debtBreakdown = {
+        mortgage: parseFloat(formData.debt_breakdown_mortgage) || 0,
+        auto_loan: parseFloat(formData.debt_breakdown_auto_loan) || 0,
+        credit_cards: parseFloat(formData.debt_breakdown_credit_cards) || 0,
+        student_loans: parseFloat(formData.debt_breakdown_student_loans) || 0,
+        other_debts: parseFloat(formData.debt_breakdown_other_debts) || 0,
+      };
+      const hasDebtBreakdown = Object.values(debtBreakdown).some(value => value > 0);
+
+      const propertyProvided = Boolean(
+        formData.property_address ||
+        formData.property_city ||
+        formData.property_state ||
+        formData.property_zip_code ||
+        formData.property_type ||
+        formData.property_appraised_value ||
+        formData.property_appraisal_date ||
+        formData.property_comparable_sales ||
+        formData.property_condition ||
+        formData.property_inspection_completed ||
+        formData.property_title_review
+      );
+
+      const documentationProvided = Boolean(
+        formData.documentation_application_signed ||
+        formData.documentation_pay_stubs_verified ||
+        formData.documentation_tax_returns_verified ||
+        formData.documentation_w2_forms_verified ||
+        formData.documentation_bank_statements_verified ||
+        formData.documentation_employment_verification ||
+        formData.documentation_credit_reports ||
+        formData.documentation_appraisal_report ||
+        formData.documentation_title_report ||
+        formData.documentation_pay_stubs_months ||
+        formData.documentation_tax_returns_years ||
+        formData.documentation_w2_years ||
+        formData.documentation_bank_statements_months
+      );
+
       const payload = {
         request_id: formData.request_id,
         applicant: {
@@ -168,7 +242,7 @@ const LoanApplicationForm = () => {
         },
         financial: {
           monthly_debt_payments: parseFloat(formData.monthly_debt_payments) || 0,
-          monthly_debt_breakdown: null,
+          monthly_debt_breakdown: hasDebtBreakdown ? debtBreakdown : null,
           checking_balance: formData.checking_balance ? parseFloat(formData.checking_balance) : null,
           savings_balance: formData.savings_balance ? parseFloat(formData.savings_balance) : null,
           investment_balance: parseFloat(formData.investment_balance) || null,
@@ -203,6 +277,38 @@ const LoanApplicationForm = () => {
           front_end_dti: formData.front_end_dti ? parseFloat(formData.front_end_dti) : null,
           back_end_dti: formData.back_end_dti ? parseFloat(formData.back_end_dti) : null,
         },
+        property: propertyProvided
+          ? {
+              address: formData.property_address || null,
+              city: formData.property_city || null,
+              state: formData.property_state || null,
+              zip_code: formData.property_zip_code || null,
+              property_type: formData.property_type || null,
+              appraised_value: formData.property_appraised_value ? parseFloat(formData.property_appraised_value) : null,
+              appraisal_date: formData.property_appraisal_date || null,
+              comparable_sales: formData.property_comparable_sales || null,
+              property_condition: formData.property_condition || null,
+              inspection_completed: formData.property_inspection_completed,
+              title_review: formData.property_title_review || null,
+            }
+          : null,
+        documentation: documentationProvided
+          ? {
+              application_signed: formData.documentation_application_signed,
+              pay_stubs_verified: formData.documentation_pay_stubs_verified,
+              pay_stubs_months: formData.documentation_pay_stubs_months ? parseInt(formData.documentation_pay_stubs_months, 10) : null,
+              tax_returns_verified: formData.documentation_tax_returns_verified,
+              tax_returns_years: formData.documentation_tax_returns_years ? parseInt(formData.documentation_tax_returns_years, 10) : null,
+              w2_forms_verified: formData.documentation_w2_forms_verified,
+              w2_years: formData.documentation_w2_years ? parseInt(formData.documentation_w2_years, 10) : null,
+              bank_statements_verified: formData.documentation_bank_statements_verified,
+              bank_statements_months: formData.documentation_bank_statements_months ? parseInt(formData.documentation_bank_statements_months, 10) : null,
+              employment_verification: formData.documentation_employment_verification || null,
+              credit_reports: formData.documentation_credit_reports || null,
+              appraisal_report: formData.documentation_appraisal_report || null,
+              title_report: formData.documentation_title_report || null,
+            }
+          : null,
       };
 
       const response = await loanAPI.submitApplication(payload);
@@ -270,7 +376,133 @@ const LoanApplicationForm = () => {
       loan_to_value: '',
       front_end_dti: '',
       back_end_dti: '',
+      property_address: '',
+      property_city: '',
+      property_state: '',
+      property_zip_code: '',
+      property_type: '',
+      property_appraised_value: '',
+      property_appraisal_date: '',
+      property_comparable_sales: '',
+      property_condition: '',
+      property_inspection_completed: false,
+      property_title_review: '',
+      documentation_application_signed: false,
+      documentation_pay_stubs_verified: false,
+      documentation_pay_stubs_months: '',
+      documentation_tax_returns_verified: false,
+      documentation_tax_returns_years: '',
+      documentation_w2_forms_verified: false,
+      documentation_w2_years: '',
+      documentation_bank_statements_verified: false,
+      documentation_bank_statements_months: '',
+      documentation_employment_verification: '',
+      documentation_credit_reports: '',
+      documentation_appraisal_report: '',
+      documentation_title_report: '',
+      debt_breakdown_mortgage: '',
+      debt_breakdown_auto_loan: '',
+      debt_breakdown_credit_cards: '',
+      debt_breakdown_student_loans: '',
+      debt_breakdown_other_debts: '',
     });
+    setErrors({});
+    setResult(null);
+  };
+
+  const generateApprovedRequest = () => {
+    // Use exact data from sample_approved_request.json that is known to be approved
+    setFormData({
+      request_id: `approved-${Date.now()}`,
+      
+      // Personal Info - From approved sample
+      first_name: 'Sarah',
+      last_name: 'Johnson',
+      date_of_birth: '1985-03-15',
+      ssn: '123-45-6789',
+      email: 'sarah.johnson@example.com',
+      phone: '+15551234567',
+      address: '456 Oak Avenue',
+      city: 'Seattle',
+      state: 'WA',
+      zip_code: '98101',
+
+      // Employment - From approved sample
+      employment_status: 'employed',
+      employer_name: 'Tech Solutions Inc',
+      job_title: 'Senior Software Engineer',
+      years_employed: '5.5',
+      monthly_income: '12000',
+      additional_income: '1000',
+      industry: 'Technology',
+      industry_outlook: 'Stable with strong growth prospects',
+
+      // Financial - From approved sample
+      monthly_debt_payments: '2000',
+      checking_balance: '15000',
+      savings_balance: '50000',
+      investment_balance: '75000',
+      retirement_balance: '120000',
+      asset_reserves_months: '8.5',
+      has_bankruptcy: false,
+      bankruptcy_date: '',
+      has_foreclosure: false,
+      foreclosure_date: '',
+
+      // Credit History - From approved sample
+      credit_score: '780',
+      number_of_credit_cards: '4',
+      total_credit_limit: '60000',
+      credit_utilization: '15.5',
+      number_of_late_payments_12m: '0',
+      number_of_late_payments_24m: '0',
+      number_of_inquiries_6m: '1',
+      oldest_credit_line_years: '12.5',
+      payment_history: 'Excellent - no missed payments in 24 months',
+      credit_mix: 'Diverse - includes credit cards, auto loan, and student loans',
+      public_records: 'None - no judgments, liens, or bankruptcies',
+      recent_inquiries: '1 inquiry in last 6 months for auto loan',
+
+      // Loan Details - From approved sample
+      loan_amount: '400000',
+      loan_purpose: 'home_purchase',
+      term_months: '360',
+      property_value: '500000',
+      down_payment: '100000',
+      loan_to_value: '80.0',
+      front_end_dti: '23.5',
+      back_end_dti: '35.2',
+      property_address: '789 Pine Street',
+      property_city: 'Seattle',
+      property_state: 'WA',
+      property_zip_code: '98102',
+      property_type: 'Single Family',
+      property_appraised_value: '500000',
+      property_appraisal_date: '2024-09-15',
+      property_comparable_sales: 'Recent sales in area range $480k-$520k',
+      property_condition: 'Excellent - well maintained, no major defects',
+      property_inspection_completed: true,
+      property_title_review: 'Clear title - no liens or encumbrances',
+      documentation_application_signed: true,
+      documentation_pay_stubs_verified: true,
+      documentation_pay_stubs_months: '2',
+      documentation_tax_returns_verified: true,
+      documentation_tax_returns_years: '2',
+      documentation_w2_forms_verified: true,
+      documentation_w2_years: '2',
+      documentation_bank_statements_verified: true,
+      documentation_bank_statements_months: '3',
+      documentation_employment_verification: 'Completed via phone verification on 2024-09-20',
+      documentation_credit_reports: 'Obtained from all three bureaus - Experian, Equifax, TransUnion',
+      documentation_appraisal_report: 'Completed by licensed appraiser',
+      documentation_title_report: 'Clear title confirmed',
+      debt_breakdown_mortgage: '0',
+      debt_breakdown_auto_loan: '500',
+      debt_breakdown_credit_cards: '300',
+      debt_breakdown_student_loans: '800',
+      debt_breakdown_other_debts: '400',
+    });
+    
     setErrors({});
     setResult(null);
   };
@@ -364,6 +596,35 @@ const LoanApplicationForm = () => {
       loan_to_value: '',
       front_end_dti: '',
       back_end_dti: '',
+      property_address: '',
+      property_city: '',
+      property_state: '',
+      property_zip_code: '',
+      property_type: '',
+      property_appraised_value: '',
+      property_appraisal_date: '',
+      property_comparable_sales: '',
+      property_condition: '',
+      property_inspection_completed: false,
+      property_title_review: '',
+      documentation_application_signed: false,
+      documentation_pay_stubs_verified: false,
+      documentation_pay_stubs_months: '',
+      documentation_tax_returns_verified: false,
+      documentation_tax_returns_years: '',
+      documentation_w2_forms_verified: false,
+      documentation_w2_years: '',
+      documentation_bank_statements_verified: false,
+      documentation_bank_statements_months: '',
+      documentation_employment_verification: '',
+      documentation_credit_reports: '',
+      documentation_appraisal_report: '',
+      documentation_title_report: '',
+      debt_breakdown_mortgage: '',
+      debt_breakdown_auto_loan: '',
+      debt_breakdown_credit_cards: '',
+      debt_breakdown_student_loans: '',
+      debt_breakdown_other_debts: '',
     });
     
     setErrors({});
@@ -934,6 +1195,9 @@ const LoanApplicationForm = () => {
           ) : (
             'Submit Application'
           )}
+        </button>
+        <button type="button" className="btn btn-secondary" onClick={generateApprovedRequest} disabled={loading}>
+          ✓ Generate Approved Request
         </button>
         <button type="button" className="btn btn-secondary" onClick={generateRandomData} disabled={loading}>
           🎲 Generate Random Data
