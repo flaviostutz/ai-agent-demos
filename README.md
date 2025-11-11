@@ -23,6 +23,11 @@ This monorepo follows enterprise-grade practices for AI agent development and de
 │       ├── datasets/         # Ground truth datasets
 │       ├── policies/         # Loan policy documents
 │       └── Makefile          # Agent-specific build targets
+├── frontend/                  # Web Frontend
+│   ├── src/                  # React application
+│   │   ├── components/       # React components
+│   │   └── api.js           # API client
+│   └── Makefile              # Frontend build targets
 ├── shared/                    # Shared libraries
 │   ├── models/               # Common data models
 │   ├── utils/                # Utility functions
@@ -46,6 +51,7 @@ This monorepo follows enterprise-grade practices for AI agent development and de
 - **Make** utility installed
 - **Git** for version control
 - **OpenAI API key** (for LLM functionality)
+- **Node.js 18+** and **pnpm** (for frontend)
 - **Databricks account** (optional, for production deployment)
 
 ### Install UV
@@ -169,6 +175,30 @@ curl -X POST http://localhost:8000/api/v1/loan/evaluate \
     }
   }'
 ```
+
+### Run the Web Frontend (Optional)
+
+The project includes a modern React.js web application for submitting loan applications:
+
+1. **Install frontend dependencies**:
+```bash
+cd frontend
+make install
+```
+
+2. **Start the frontend** (in a new terminal):
+```bash
+make dev
+```
+
+The web application will be available at http://localhost:3000
+
+3. **Use the application**:
+- Fill out the comprehensive loan application form
+- Submit for instant AI-powered evaluation
+- View detailed decision with reasoning and recommendations
+
+See [frontend/README.md](frontend/README.md) for more details.
 
 ### Configure Artifactory (Corporate Environment)
 

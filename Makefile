@@ -1,4 +1,4 @@
-.PHONY: help setup install sync clean lint lint-fix test test-integration test-performance run build deploy undeploy all ci check-uv
+.PHONY: help setup install sync clean lint lint-fix test test-integration test-performance run build deploy undeploy all ci check-uv frontend-install frontend-dev frontend-build frontend-clean frontend-test frontend-test-ui run-all
 
 # Default target
 .DEFAULT_GOAL := help
@@ -25,7 +25,23 @@ endif
 help: ## Show this help message
 	@echo "$(BLUE)AI Agents Monorepo - Available targets:$(NC)"
 	@echo ""
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(GREEN)%-20s$(NC) %s\n", $$1, $$2}'
+	@echo "$(YELLOW)Setup & Installation:$(NC)"
+	@grep -E '^(setup|install|sync|clean):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(GREEN)%-20s$(NC) %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(YELLOW)Development:$(NC)"
+	@grep -E '^(lint|lint-fix|test|test-integration|test-performance):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(GREEN)%-20s$(NC) %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(YELLOW)Running Services:$(NC)"
+	@grep -E '^(run|run-mlflow|run-all):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(GREEN)%-20s$(NC) %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(YELLOW)Frontend:$(NC)"
+	@grep -E '^frontend-.*:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(GREEN)%-20s$(NC) %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(YELLOW)Deployment:$(NC)"
+	@grep -E '^(build|deploy|undeploy):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(GREEN)%-20s$(NC) %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(YELLOW)Other:$(NC)"
+	@grep -E '^(all|ci|set-openai-key|set-azure-openai-key):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(GREEN)%-20s$(NC) %s\n", $$1, $$2}'
 	@echo ""
 	@echo "$(YELLOW)Agent-specific targets:$(NC)"
 	@echo "  Run 'make -C agents/<agent-name> <target>' for agent-specific operations"
@@ -210,3 +226,51 @@ all: build lint test
 
 ci: clean install all ## Run CI pipeline locally
 	@echo "$(GREEN)CI pipeline complete!$(NC)"
+
+# Frontend targets
+
+frontend-install: ## Install frontend dependencies
+	@echo "$(BLUE)Installing frontend dependencies...$(NC)"
+	@if [ ! -d "frontend/node_modules" ]; then \
+		cd frontend && COREPACK_ENABLE_STRICT=0 pnpm install --no-frozen-lockfile; \
+		echo "$(GREEN)Frontend dependencies installed!$(NC)"; \
+	else \
+		echo "$(YELLOW)Frontend dependencies already installed. Run 'make frontend-clean' to reinstall.$(NC)"; \
+	fi
+
+frontend-dev: ## Start frontend development server
+	@echo "$(BLUE)Starting frontend development server...$(NC)"
+	@echo "$(YELLOW)Frontend will be available at: http://localhost:3000$(NC)"
+	@echo "$(YELLOW)Press Ctrl+C to stop$(NC)"
+	@cd frontend && COREPACK_ENABLE_STRICT=0 pnpm run dev
+
+frontend-build: ## Build frontend for production
+	@echo "$(BLUE)Building frontend for production...$(NC)"
+	@cd frontend && COREPACK_ENABLE_STRICT=0 pnpm run build
+	@echo "$(GREEN)Frontend build complete! Output in frontend/dist/$(NC)"
+
+frontend-preview: ## Preview production build
+	@echo "$(BLUE)Starting production preview server...$(NC)"
+	@echo "$(YELLOW)Preview will be available at: http://localhost:4173$(NC)"
+	@cd frontend && COREPACK_ENABLE_STRICT=0 pnpm run preview
+
+frontend-clean: ## Clean frontend build artifacts and dependencies
+	@echo "$(BLUE)Cleaning frontend...$(NC)"
+	@cd frontend && rm -rf node_modules dist
+	@echo "$(GREEN)Frontend cleaned!$(NC)"
+
+frontend-test: ## Run Playwright tests
+	@echo "$(BLUE)Running Playwright tests...$(NC)"
+	@echo "$(YELLOW)Note: Dev server must be running on port 3000$(NC)"
+	@echo "$(YELLOW)Run 'make frontend-dev' in another terminal if not started$(NC)"
+	@cd frontend && SKIP_WEBSERVER=1 COREPACK_ENABLE_STRICT=0 pnpm run test
+	@echo "$(GREEN)Frontend tests complete!$(NC)"
+
+frontend-test-ui: ## Run Playwright tests in UI mode
+	@echo "$(BLUE)Starting Playwright UI mode...$(NC)"
+	@echo "$(YELLOW)Note: Dev server must be running on port 3000$(NC)"
+	@cd frontend && SKIP_WEBSERVER=1 COREPACK_ENABLE_STRICT=0 pnpm run test:ui
+
+run-all: ## Start both backend API and frontend together
+	@chmod +x start.sh
+	@./start.sh
